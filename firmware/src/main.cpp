@@ -79,12 +79,17 @@ int main()
 
     uavcan::MonotonicTime prev_log_at;
 
+    auto state = false;
+
     while (true)
     {
-        const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(25));
+        const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(100));
+        (void)res;
 
-        board::setStatusLed(res < 0);
-        board::setCanLed(uavcan_lpc11c24::CanDriver::instance().hadActivity());
+        board::setStatusLed(state);
+        board::setCanLed(state);
+
+        state = !state;
 
         board::resetWatchdog();
     }
