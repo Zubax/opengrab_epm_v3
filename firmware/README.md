@@ -27,6 +27,8 @@ Refer to the schematic for details.
 |   PIO2_7     | DOUT      | CTRL_2
 |   PIO2_8     | DOUT      | CTRL_4
 |   PIO2_10    | DIN       | PWM
+|   PIO3_0     | DOUT      | SW_L
+|   PIO3_1     | DOUT      | SW_H
 |   PIO3_3     | DIN       | DIP_4
 
 ## Building & Running

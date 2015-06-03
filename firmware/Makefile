@@ -19,7 +19,7 @@ INC = -Isrc/sys                         \
 # UAVCAN library
 #
 
-DEF += -DUAVCAN_TINY=1
+DEF += -DUAVCAN_TINY=1 -DUAVCAN_CPP_VERSION=UAVCAN_CPP11
 
 include libuavcan/libuavcan/include.mk
 CPPSRC += $(LIBUAVCAN_SRC)
@@ -61,7 +61,7 @@ C_CPP_FLAGS = $(FLAGS) -MD -MP -MF $(DEPDIR)/$(@F).d
 
 CFLAGS = $(C_CPP_FLAGS) -std=c99
 
-CPPFLAGS = $(C_CPP_FLAGS) -pedantic -std=c++11 -fno-rtti -fno-threadsafe-statics
+CPPFLAGS = $(C_CPP_FLAGS) -pedantic -std=c++14 -fno-rtti -fno-threadsafe-statics
 
 LDFLAGS = $(FLAGS) -nodefaultlibs -lc -lgcc -nostartfiles -Tlpc11c24.ld -Xlinker --gc-sections \
           -Wl,-Map,$(BUILDDIR)/output.map

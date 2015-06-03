@@ -4,18 +4,36 @@
  * Author: Pavel Kirienko <pavel.kirienko@zubax.com>
  */
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace board
 {
 
-static const unsigned UniqueIDSize = 16;
+constexpr unsigned UniqueIDSize = 16;
 
-void readUniqueID(uint8_t out_uid[UniqueIDSize]);
+void readUniqueID(std::uint8_t out_uid[UniqueIDSize]);
+
+void resetWatchdog();
 
 void setStatusLed(bool state);
 void setCanLed(bool state);
 
-void resetWatchdog();
+enum class PumpSwitchState : std::uint8_t
+{
+    Off,
+    Low,
+    High
+};
+void setPumpSwitch(const PumpSwitchState state);
+
+enum class MagnetBridgeState : std::uint8_t
+{
+    BothLow,
+    RightHighLeftLow,
+    RightLowLeftHigh
+};
+void setMagnetBridge(const MagnetBridgeState state);
+
+std::uint8_t readDipSwitch();
 
 }
