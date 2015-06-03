@@ -32,4 +32,6 @@ std::uint8_t readDipSwitch();
 
 bool hadButtonPressEvent();
 
+void delayUSec(std::uint16_t usec);
+
 }

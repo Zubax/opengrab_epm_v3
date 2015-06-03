@@ -81,8 +81,6 @@ int main()
 
     board::setStatusLed(false);
 
-    auto state = false;
-
     while (true)
     {
         const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(1));
@@ -90,9 +88,14 @@ int main()
 
         if (board::hadButtonPressEvent())
         {
-            state = !state;
+            board::setCanLed(true);
+            board::delayUSec(50000);
+            board::setCanLed(false);
+            board::delayUSec(50000);
+            board::setCanLed(true);
+            board::delayUSec(50000);
+            board::setCanLed(false);
         }
-        board::setCanLed(state);
 
         board::resetWatchdog();
     }

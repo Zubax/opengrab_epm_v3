@@ -319,6 +319,16 @@ bool hadButtonPressEvent()
     }
 }
 
+void delayUSec(std::uint16_t usec)
+{
+    constexpr std::uint32_t CyclesPerUSec = TargetSystemCoreClock / 1000000;
+    const std::uint32_t started_at = SysTick->VAL;
+    while (SysTick->VAL - started_at < usec * CyclesPerUSec)
+    {
+        ; // Doing nothing, it's a busyloop
+    }
+}
+
 } // namespace board
 
 extern "C"
