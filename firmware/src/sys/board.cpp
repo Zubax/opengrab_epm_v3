@@ -229,23 +229,10 @@ void setCanLed(bool state)
     gpio::CanLed.set(state);
 }
 
-void setPumpSwitch(const PumpSwitchState state)
+void setChargePumpSwitch(bool state)
 {
-    if (state == PumpSwitchState::High)
-    {
-        gpio::PumpSwitchLow.set(false);
-        gpio::PumpSwitchHigh.set(true);
-    }
-    else if (state == PumpSwitchState::Low)
-    {
-        gpio::PumpSwitchHigh.set(false);
-        gpio::PumpSwitchLow.set(true);
-    }
-    else
-    {
-        gpio::PumpSwitchHigh.set(false);
-        gpio::PumpSwitchLow.set(false);
-    }
+    gpio::PumpSwitchLow.set(state);
+    gpio::PumpSwitchHigh.set(state);
 }
 
 void setMagnetBridge(const MagnetBridgeState state)
