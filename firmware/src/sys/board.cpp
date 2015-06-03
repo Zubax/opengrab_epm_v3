@@ -12,19 +12,22 @@
 #include <cstring>
 #include <numeric>
 #include <cstdint>
+#include <algorithm>
 
 #define PDRUNCFGUSEMASK 0x0000ED00
 #define PDRUNCFGMASKTMP 0x000000FF
 
-constexpr uint32_t OscRateIn = 12000000; ///< External crystal
-constexpr uint32_t ExtRateIn = 0;
+constexpr std::uint32_t OscRateIn = 12000000; ///< External crystal
+constexpr std::uint32_t ExtRateIn = 0;
 
-uint32_t SystemCoreClock = 12000000; ///< Initialized to default clock value, will be changed on init
+std::uint32_t SystemCoreClock = 12000000; ///< Initialized to default clock value, will be changed on init
 
 namespace board
 {
 namespace
 {
+
+constexpr std::uint32_t TargetSystemCoreClock = 48000000;
 
 struct PortPin
 {
@@ -50,6 +53,16 @@ struct PortPin
     {
         LPC_GPIO[port].DIR |= 1U << pin;
         set(initial_state);
+    }
+
+    void makeInput() const
+    {
+        LPC_GPIO[port].DIR &= ~static_cast<std::uint32_t>(1U << pin);
+    }
+
+    bool isOutput() const
+    {
+        return (LPC_GPIO[port].DIR & (1U << pin)) != 0;
     }
 };
 
@@ -102,7 +115,7 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_2
     { IOCON_PIO1_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3
     // PIO2
-    { IOCON_PIO2_0,  IOCON_FUNC0 },                                                             // Status LED
+    { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN},                         // Status LED
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_2
     { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_4
@@ -165,7 +178,7 @@ void initClock()
 
     SystemCoreClock = Chip_Clock_GetSystemClockRate();
 
-    while (SystemCoreClock != 48000000) { }  // Loop forever if the clock failed to initialize properly
+    while (SystemCoreClock != TargetSystemCoreClock) { }  // Loop forever if the clock failed to initialize properly
 }
 
 void initGpio()
@@ -219,9 +232,21 @@ void readUniqueID(std::uint8_t out_uid[UniqueIDSize])
     std::memcpy(out_uid, aligned_array, 16);
 }
 
+void resetWatchdog()
+{
+    Chip_WWDT_Feed(LPC_WWDT);
+}
+
 void setStatusLed(bool state)
 {
-    gpio::StatusLed.set(state);
+    if (state)
+    {
+        gpio::StatusLed.makeOutputAndSet(state);
+    }
+    else
+    {
+        gpio::StatusLed.makeInput();
+    }
 }
 
 void setCanLed(bool state)
@@ -278,9 +303,21 @@ std::uint8_t readDipSwitch()
     return out;
 }
 
-void resetWatchdog()
+bool hadButtonPressEvent()
 {
-    Chip_WWDT_Feed(LPC_WWDT);
+    constexpr std::uint8_t PressCounterThreshold = 10;
+    static std::uint8_t press_counter = 0;
+    if (gpio::StatusLed.get() && !gpio::StatusLed.isOutput())
+    {
+        press_counter = std::min(static_cast<std::uint8_t>(press_counter + 1), PressCounterThreshold);
+        return false;
+    }
+    else
+    {
+        const bool had_press = press_counter >= PressCounterThreshold;
+        press_counter = 0;
+        return had_press;
+    }
 }
 
 } // namespace board

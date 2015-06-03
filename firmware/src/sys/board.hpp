@@ -30,4 +30,6 @@ void setMagnetBridge(const MagnetBridgeState state);
 
 std::uint8_t readDipSwitch();
 
+bool hadButtonPressEvent();
+
 }
