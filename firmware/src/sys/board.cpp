@@ -195,7 +195,6 @@ void initGpio()
     for (volatile int i = 0; i < 10000; i++) { }
 
     gpio::CanLed.makeOutputAndSet(false);
-    gpio::StatusLed.makeOutputAndSet(false);
 
     gpio::PumpSwitchHigh.makeOutputAndSet(false);
     gpio::PumpSwitchLow.makeOutputAndSet(false);
@@ -260,7 +259,7 @@ void setChargePumpSwitch(bool state)
     gpio::PumpSwitchHigh.set(state);
 }
 
-void setMagnetBridge(const MagnetBridgeState state)
+void setMagnetBridgeState(const MagnetBridgeState state)
 {
     /// This enum reflects the net names on the schematics, for clarity
     enum { CTRL_1, CTRL_2, CTRL_3, CTRL_4 };

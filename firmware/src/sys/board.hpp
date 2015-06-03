@@ -26,7 +26,7 @@ enum class MagnetBridgeState : std::uint8_t
     RightHighLeftLow,
     RightLowLeftHigh
 };
-void setMagnetBridge(const MagnetBridgeState state);
+void setMagnetBridgeState(const MagnetBridgeState state);
 
 std::uint8_t readDipSwitch();
 
