@@ -315,6 +315,10 @@ bool hadButtonPressEvent()
 {
     constexpr std::uint8_t PressCounterThreshold = 10;
     static std::uint8_t press_counter = 0;
+
+    char s[2] = {char('A' + press_counter), 0};
+    syslog(reinterpret_cast<const char*>(s));
+
     if (gpio::StatusLed.get() && !gpio::StatusLed.isOutput())
     {
         press_counter = std::min(static_cast<std::uint8_t>(press_counter + 1), PressCounterThreshold);
