@@ -86,6 +86,8 @@ int main()
         const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(1));
         (void)res;
 
+        board::syslog("a");
+
         if (board::hadButtonPressEvent())
         {
             board::setCanLed(true);

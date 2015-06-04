@@ -113,7 +113,8 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_3
     { IOCON_PIO1_5,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_1
     { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_2
-    { IOCON_PIO1_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3
+//  { IOCON_PIO1_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3
+    { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3/TXD
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN},                         // Status LED
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
@@ -205,6 +206,13 @@ void initGpio()
     }
 }
 
+void initUart()
+{
+    Chip_UART_Init(LPC_USART);
+    Chip_UART_SetBaud(LPC_USART, 115200);
+    Chip_UART_TXEnable(LPC_USART);
+}
+
 void init()
 {
     Chip_SYSCTL_SetBODLevels(SYSCTL_BODRSTLVL_2_06V, SYSCTL_BODINTVAL_RESERVED1);
@@ -214,6 +222,7 @@ void init()
     initClock();
     initGpio();
     // TODO: ADC initalization
+    initUart();
 
     resetWatchdog();
 }
@@ -327,6 +336,11 @@ void delayUSec(std::uint16_t usec)
     {
         ; // Doing nothing, it's a busyloop
     }
+}
+
+void syslog(const char* msg)
+{
+    Chip_UART_SendBlocking(LPC_USART, msg, static_cast<int>(std::strlen(msg)));
 }
 
 } // namespace board

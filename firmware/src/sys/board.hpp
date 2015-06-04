@@ -34,4 +34,6 @@ bool hadButtonPressEvent();
 
 void delayUSec(std::uint16_t usec);
 
+void syslog(const char* msg);
+
 }
