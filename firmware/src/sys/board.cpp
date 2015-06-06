@@ -14,6 +14,10 @@
 #include <cstdint>
 #include <algorithm>
 
+#ifndef BOARD_OLIMEX_LPC_P11C24
+#define BOARD_OLIMEX_LPC_P11C24 0
+#endif
+
 #define PDRUNCFGUSEMASK 0x0000ED00
 #define PDRUNCFGMASKTMP 0x000000FF
 
@@ -68,7 +72,11 @@ struct PortPin
 
 namespace gpio
 {
+#if BOARD_OLIMEX_LPC_P11C24
+constexpr PortPin CanLed(1, 11);
+#else
 constexpr PortPin CanLed(2, 6);
+#endif
 constexpr PortPin StatusLed(2, 0);
 
 constexpr PortPin PumpSwitchLow(3, 0);
@@ -86,7 +94,7 @@ constexpr PortPin DipSwitch[4]
 {
     PortPin(1, 5),
     PortPin(1, 6),
-    PortPin(1, 7),
+    PortPin(1, 7),      // TODO: This one will have to be changed
     PortPin(3, 3)
 };
 }
@@ -113,11 +121,15 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_3
     { IOCON_PIO1_5,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_1
     { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_2
-//  { IOCON_PIO1_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3
-    { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3/TXD
+    { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
+#if BOARD_OLIMEX_LPC_P11C24
+    { IOCON_PIO1_11, IOCON_FUNC0 },                                                             // CAN LED
+#endif
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN},                         // Status LED
+#if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
+#endif
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_2
     { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_4
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
@@ -125,6 +137,7 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO3_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_L
     { IOCON_PIO3_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_H
     { IOCON_PIO3_3,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP }                           // DIP_4
+    // TODO: DIP_3 is unassigned
 };
 
 
@@ -259,6 +272,9 @@ void setStatusLed(bool state)
 
 void setCanLed(bool state)
 {
+#if BOARD_OLIMEX_LPC_P11C24
+    state = !state;
+#endif
     gpio::CanLed.set(state);
 }
 
@@ -315,9 +331,6 @@ bool hadButtonPressEvent()
 {
     constexpr std::uint8_t PressCounterThreshold = 10;
     static std::uint8_t press_counter = 0;
-
-    char s[2] = {char('A' + press_counter), 0};
-    syslog(reinterpret_cast<const char*>(s));
 
     if (gpio::StatusLed.get() && !gpio::StatusLed.isOutput())
     {

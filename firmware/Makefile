@@ -15,6 +15,10 @@ DEF = -DFW_VERSION_MAJOR=1 -DFW_VERSION_MINOR=0
 INC = -Isrc/sys                         \
       -isystem lpc_chip_11cxx_lib/inc
 
+ifdef BOARD_OLIMEX_LPC_P11C24
+    DEF += -DBOARD_OLIMEX_LPC_P11C24
+endif
+
 #
 # UAVCAN library
 #

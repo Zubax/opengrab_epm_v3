@@ -86,6 +86,7 @@ int main()
 
         if (board::hadButtonPressEvent())
         {
+            board::syslog("P");
             board::setCanLed(true);
             board::delayUSec(50000);
             board::setCanLed(false);
