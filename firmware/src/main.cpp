@@ -80,6 +80,31 @@ void delayMSec(unsigned msec)
     }
 }
 
+void poll1kHz()
+{
+    if (board::hadButtonPressEvent())
+    {
+        board::syslog("Press\r\n");
+        board::setCanLed(true);
+        board::setStatusLed(true);
+        delayMSec(50);
+        board::setCanLed(false);
+        board::setStatusLed(false);
+        delayMSec(50);
+        board::setCanLed(true);
+        board::setStatusLed(true);
+        delayMSec(50);
+        board::setCanLed(false);
+        board::setStatusLed(false);
+        delayMSec(50);
+        board::setCanLed(true);
+        board::setStatusLed(true);
+        delayMSec(50);
+        board::setCanLed(false);
+        board::setStatusLed(false);
+    }
+}
+
 }
 
 int main()
@@ -90,15 +115,20 @@ int main()
 
     board::setStatusLed(false);
 
-    board::syslog("\r\n\r\n");
+    board::syslog("Init OK\r\n");
 
     while (true)
     {
-        board::setCanLed(true);
-        delayMSec(30);
+        // Spin duration defines poll interval for other functions
+        const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(1));
+        if (res < 0)
+        {
+            board::syslog("Spin err ");
+            char s[] = {static_cast<char>('A' - res), '\r', '\n', '\0'};
+            board::syslog(static_cast<const char*>(s));
+        }
 
-        board::setCanLed(false);
-        delayMSec(30);
+        poll1kHz();
 
         board::resetWatchdog();
     }
