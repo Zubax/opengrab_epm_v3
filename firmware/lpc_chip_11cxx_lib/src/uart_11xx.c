@@ -237,14 +237,15 @@ void Chip_UART_IRQRBHandler(LPC_USART_T *pUART, RINGBUFF_T *pRXRB, RINGBUFF_T *p
 uint32_t Chip_UART_SetBaudFDR(LPC_USART_T *pUART, uint32_t baudrate)
 
 {
-	uint32_t uClk;
-    uint32_t dval, mval;
-    uint32_t dl;
+    uint32_t uClk = 0;
+    uint32_t dval = 0;
+    uint32_t mval = 0;
+    uint32_t dl = 0;
     uint32_t rate16 = 16 * baudrate;
-	uint32_t actualRate = 0;
+    uint32_t actualRate = 0;
 
-	/* Get Clock rate */
-	uClk = Chip_Clock_GetMainClockRate();
+    /* Get Clock rate */
+    uClk = Chip_Clock_GetMainClockRate();
 
     /* The fractional is calculated as (PCLK  % (16 * Baudrate)) / (16 * Baudrate)
      * Let's make it to be the ratio DivVal / MulVal
