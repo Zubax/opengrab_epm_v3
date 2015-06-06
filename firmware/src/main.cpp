@@ -126,6 +126,7 @@ void poll1kHz()
                                     board::MagnetBridgeState::RightLowLeftHigh);
         board::delayUSec(5);
         board::setMagnetBridgeState(board::MagnetBridgeState::BothLow);
+        last_magnet_state = !last_magnet_state;
     }
 }
 

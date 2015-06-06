@@ -13,6 +13,7 @@
 #include <numeric>
 #include <cstdint>
 #include <algorithm>
+#include <array>
 
 #ifndef BOARD_OLIMEX_LPC_P11C24
 #define BOARD_OLIMEX_LPC_P11C24 0
@@ -33,70 +34,93 @@ namespace
 
 constexpr std::uint32_t TargetSystemCoreClock = 48000000;
 
-struct PortPin
+template <unsigned NumPins>
+struct PinGroup
 {
-    const std::uint8_t port : 3;
-    const std::uint8_t pin  : 5;
+    const std::uint8_t port;
+    const std::array<std::uint8_t, NumPins> pins;
 
-    constexpr PortPin(std::uint8_t arg_port, std::uint8_t arg_pin) :
+    constexpr PinGroup(std::uint8_t arg_port, const std::array<std::uint8_t, NumPins>& arg_pins) :
         port(arg_port & 0b111),
-        pin(arg_pin & 0b11111)
+        pins(arg_pins)
     { }
 
-    void set(bool state) const
+    std::uint32_t getMask() const
     {
-        LPC_GPIO[port].DATA[1 << pin] = static_cast<unsigned long>(state) << pin;
+        std::uint32_t mask = 0;
+        for (auto x : pins) { mask |= 1U << x; }
+        return mask;
     }
 
-    bool get() const
+    void set(const unsigned pin_states) const
     {
-        return LPC_GPIO[port].DATA[1 << pin] != 0;
+        std::uint32_t out_mask = 0;
+        for (unsigned i = 0; i < NumPins; i++)
+        {
+            out_mask |= (static_cast<unsigned>((pin_states & (1U << i)) != 0) << pins[i]);
+        }
+        LPC_GPIO[port].DATA[getMask()] = out_mask;
     }
 
-    void makeOutputAndSet(bool initial_state) const
+    unsigned get() const
     {
-        LPC_GPIO[port].DIR |= 1U << pin;
-        set(initial_state);
+        unsigned out = 0;
+        const auto sample = LPC_GPIO[port].DATA[getMask()];
+        for (unsigned i = 0; i < NumPins; i++)
+        {
+            if ((sample & (1U << pins[i])) != 0)
+            {
+                out |= 1U << i;
+            }
+        }
+        return out;
     }
 
-    void makeInput() const
+    void makeOutputsAndSet(const unsigned pin_states) const
     {
-        LPC_GPIO[port].DIR &= ~static_cast<std::uint32_t>(1U << pin);
+        LPC_GPIO[port].DIR |= getMask();
+        set(pin_states);
     }
 
-    bool isOutput() const
+    void makeInputs() const
     {
-        return (LPC_GPIO[port].DIR & (1U << pin)) != 0;
+        LPC_GPIO[port].DIR &= ~getMask();
     }
+
+    bool areAllOutputs() const
+    {
+        const auto mask = getMask();
+        return (LPC_GPIO[port].DIR & mask) == mask;
+    }
+};
+
+struct Pin : private PinGroup<1>
+{
+    constexpr Pin(std::uint8_t arg_port, std::uint8_t arg_pin) : PinGroup<1>(arg_port, {arg_pin}) { }
+
+    void set(bool state) const { PinGroup<1>::set(state); }
+    bool get()           const { return PinGroup<1>::get() != 0; }
+
+    void makeOutputAndSet(bool state) const { PinGroup<1>::makeOutputsAndSet(state); }
+    void makeInput()                  const { PinGroup<1>::makeInputs(); }
+    bool isOutput()                   const { return PinGroup<1>::areAllOutputs(); }
 };
 
 namespace gpio
 {
 #if BOARD_OLIMEX_LPC_P11C24
-constexpr PortPin CanLed(1, 11);
+constexpr Pin CanLed(1, 11);
 #else
-constexpr PortPin CanLed(2, 6);
+constexpr Pin CanLed(2, 6);
 #endif
-constexpr PortPin StatusLed(2, 0);
+constexpr Pin StatusLed(2, 0);
 
-constexpr PortPin PumpSwitchLow(3, 0);
-constexpr PortPin PumpSwitchHigh(3, 1);
+constexpr PinGroup<2> PumpSwitch(3, {0, 1});
 
-constexpr PortPin MagnetCtrl[4]
-{
-    PortPin(1, 0),
-    PortPin(2, 7),
-    PortPin(1, 1),
-    PortPin(2, 8)
-};
+constexpr PinGroup<2> MagnetCtrl14(1, {0, 1});
+constexpr PinGroup<2> MagnetCtrl23(2, {7, 8});
 
-constexpr PortPin DipSwitch[4]
-{
-    PortPin(1, 5),
-    PortPin(1, 6),
-    PortPin(1, 7),      // TODO: This one will have to be changed
-    PortPin(3, 3)
-};
+// TODO: DIP switch pins are not yet defined
 }
 
 struct PinMuxGroup
@@ -118,9 +142,7 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO0_11, IOCON_FUNC2 },                                                             // Vin_ADC
     // PIO1
     { IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_1
-    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_3
-    { IOCON_PIO1_5,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_1
-    { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_2
+    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_4
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO1_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // LED2
@@ -132,13 +154,11 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_2
-    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_4
+    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_3
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
     // PIO3
     { IOCON_PIO3_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_L
     { IOCON_PIO3_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_H
-    { IOCON_PIO3_3,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP }                           // DIP_4
-    // TODO: DIP_3 is unassigned
 };
 
 
@@ -211,13 +231,10 @@ void initGpio()
 
     gpio::CanLed.makeOutputAndSet(false);
 
-    gpio::PumpSwitchHigh.makeOutputAndSet(false);
-    gpio::PumpSwitchLow.makeOutputAndSet(false);
+    gpio::PumpSwitch.makeOutputsAndSet(0);
 
-    for (auto x : gpio::MagnetCtrl)
-    {
-        x.makeOutputAndSet(false);
-    }
+    gpio::MagnetCtrl14.makeOutputsAndSet(0);
+    gpio::MagnetCtrl23.makeOutputsAndSet(0);
 }
 
 void initUart()
@@ -281,51 +298,31 @@ void setCanLed(bool state)
 
 void setChargePumpSwitch(bool state)
 {
-    gpio::PumpSwitchLow.set(state);
-    gpio::PumpSwitchHigh.set(state);
+    gpio::PumpSwitch.set(state ? 0b11 : 0b00);
 }
 
 void setMagnetBridgeState(const MagnetBridgeState state)
 {
-    /// This enum reflects the net names on the schematics, for clarity
-    enum { CTRL_1, CTRL_2, CTRL_3, CTRL_4 };
-
     if (state == MagnetBridgeState::RightHighLeftLow)
     {
-        // Off
-        gpio::MagnetCtrl[CTRL_1].set(false);
-        gpio::MagnetCtrl[CTRL_4].set(false);
-        // On
-        gpio::MagnetCtrl[CTRL_2].set(true);
-        gpio::MagnetCtrl[CTRL_3].set(true);
+        gpio::MagnetCtrl23.set(0b00);
+        gpio::MagnetCtrl14.set(0b11);
     }
     else if (state == MagnetBridgeState::RightLowLeftHigh)
     {
-        // Off
-        gpio::MagnetCtrl[CTRL_2].set(false);
-        gpio::MagnetCtrl[CTRL_3].set(false);
-        // On
-        gpio::MagnetCtrl[CTRL_1].set(true);
-        gpio::MagnetCtrl[CTRL_4].set(true);
+        gpio::MagnetCtrl14.set(0b00);
+        gpio::MagnetCtrl23.set(0b11);
     }
     else
     {
-        for (auto x : gpio::MagnetCtrl)
-        {
-            x.set(false);
-        }
+        gpio::MagnetCtrl14.set(0);
+        gpio::MagnetCtrl23.set(0);
     }
 }
 
 std::uint8_t readDipSwitch()
 {
-    std::uint8_t out = 0;
-    std::uint8_t shift = 0;
-    for (auto x : gpio::DipSwitch)
-    {
-        out = static_cast<std::uint8_t>(out | (static_cast<unsigned>(!x.get()) << (shift++))); // Inversion
-    }
-    return out;
+    return 0;   // TODO implement
 }
 
 bool hadButtonPressEvent()
