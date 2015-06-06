@@ -346,12 +346,16 @@ bool hadButtonPressEvent()
     }
 }
 
-void delayUSec(std::uint16_t usec)
+void delayUSec(std::uint8_t usec)
 {
-    constexpr std::uint32_t CyclesPerUSec = TargetSystemCoreClock / 1000000;
-    const std::uint32_t started_at = SysTick->VAL;
-    // Systick counts downwards, resolution is 24 bits
-    while (((started_at - SysTick->VAL) & 0xFFFFFFU) < (usec * CyclesPerUSec))
+    /*
+     * This function assumes that systick reload value is greater than or equal 0xFFFF.
+     * Otherwise delays will be inconsistent.
+     */
+    const std::uint16_t delay_ticks = static_cast<std::uint16_t>(usec * (TargetSystemCoreClock / 1000000U));
+    const std::uint16_t started_at = SysTick->VAL & 0xFFFFU;
+    // Systick counts downwards
+    while ((started_at - (SysTick->VAL & 0xFFFFU)) < delay_ticks)
     {
         ; // Doing nothing, it's a busyloop
     }

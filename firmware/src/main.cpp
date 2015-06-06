@@ -69,6 +69,17 @@ void init()
     board::resetWatchdog();
 }
 
+void delayMSec(unsigned msec)
+{
+    while (msec --> 0)
+    {
+        board::delayUSec(250);
+        board::delayUSec(250);
+        board::delayUSec(250);
+        board::delayUSec(240);  // Calibration
+    }
+}
+
 }
 
 int main()
@@ -79,22 +90,15 @@ int main()
 
     board::setStatusLed(false);
 
+    board::syslog("\r\n\r\n");
+
     while (true)
     {
-        const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(1));
-        (void)res;
+        board::setCanLed(true);
+        delayMSec(30);
 
-        if (board::hadButtonPressEvent())
-        {
-            board::syslog("P");
-            board::setCanLed(true);
-            board::delayUSec(50000);
-            board::setCanLed(false);
-            board::delayUSec(50000);
-            board::setCanLed(true);
-            board::delayUSec(50000);
-            board::setCanLed(false);
-        }
+        board::setCanLed(false);
+        delayMSec(30);
 
         board::resetWatchdog();
     }
