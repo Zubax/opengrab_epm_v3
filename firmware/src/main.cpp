@@ -80,28 +80,52 @@ void delayMSec(unsigned msec)
     }
 }
 
+void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
+{
+    while (times --> 0)
+    {
+        board::setStatusLed(true);
+        delayMSec(delay_ms);
+        board::setStatusLed(false);
+        if (times > 0)
+        {
+            delayMSec(delay_ms);
+        }
+    }
+}
+
 void poll1kHz()
 {
     if (board::hadButtonPressEvent())
     {
-        board::syslog("Press\r\n");
-        board::setCanLed(true);
-        board::setStatusLed(true);
-        delayMSec(50);
-        board::setCanLed(false);
-        board::setStatusLed(false);
-        delayMSec(50);
-        board::setCanLed(true);
-        board::setStatusLed(true);
-        delayMSec(50);
-        board::setCanLed(false);
-        board::setStatusLed(false);
-        delayMSec(50);
-        board::setCanLed(true);
-        board::setStatusLed(true);
-        delayMSec(50);
-        board::setCanLed(false);
-        board::setStatusLed(false);
+        /*
+         * Push button is pressed
+         * LED status blink 3 times fast
+         * Charge the capacitor, for now just pull SW_L and SW_H high twice, ton 2us, toff 10us just for debug
+         * Toggle EPM by
+         * Pulling  CTRL 1, 4 or 2,3 high ~5us to toggle state
+         */
+        board::syslog("Toggling the magnet\r\n");
+
+        // Indication
+        blinkStatusMs(30, 3);
+
+        // Charging
+        for (unsigned i = 0; i < 2; i++)
+        {
+            board::setChargePumpSwitch(true);
+            board::delayUSec(2);
+            board::setChargePumpSwitch(false);
+            board::delayUSec(10);
+        }
+
+        // Toggling the magnet
+        static bool last_magnet_state = false;
+        board::setMagnetBridgeState(last_magnet_state ?
+                                    board::MagnetBridgeState::RightHighLeftLow :
+                                    board::MagnetBridgeState::RightLowLeftHigh);
+        board::delayUSec(5);
+        board::setMagnetBridgeState(board::MagnetBridgeState::BothLow);
     }
 }
 
