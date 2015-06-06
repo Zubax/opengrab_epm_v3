@@ -352,12 +352,18 @@ void delayUSec(std::uint8_t usec)
      * This function assumes that systick reload value is greater than or equal 0xFFFF.
      * Otherwise delays will be inconsistent.
      */
-    const std::uint16_t delay_ticks = static_cast<std::uint16_t>(usec * (TargetSystemCoreClock / 1000000U));
-    const std::uint16_t started_at = SysTick->VAL & 0xFFFFU;
-    // Systick counts downwards
-    while ((started_at - (SysTick->VAL & 0xFFFFU)) < delay_ticks)
+    if (usec > 0)
     {
-        ; // Doing nothing, it's a busyloop
+        usec--; // Poor man's calibration
+
+        const std::uint16_t delay_ticks = static_cast<std::uint16_t>(usec * (TargetSystemCoreClock / 1000000U));
+        const std::uint16_t started_at = SysTick->VAL & 0xFFFFU;
+
+        // Systick counts downwards
+        while ((started_at - (SysTick->VAL & 0xFFFFU)) < delay_ticks)
+        {
+            ; // Doing nothing, it's a busyloop
+        }
     }
 }
 
