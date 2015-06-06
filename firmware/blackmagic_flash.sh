@@ -14,6 +14,7 @@ arm-none-eabi-size $elf || exit 1
 
 tmpfile=fwupload.tempfile
 cat > $tmpfile <<EOF
+exec-file $elf
 target extended-remote $PORT
 mon swdp_scan
 attach 1
@@ -21,5 +22,5 @@ load
 kill
 EOF
 
-arm-none-eabi-gdb $elf --batch -x $tmpfile
+arm-none-eabi-gdb --batch -x $tmpfile
 rm $tmpfile
