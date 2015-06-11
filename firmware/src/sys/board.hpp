@@ -34,6 +34,8 @@ bool hadButtonPressEvent();
 
 unsigned getSupplyVoltageInMillivolts();
 
+unsigned getPwmInputPeriodInMicroseconds();
+
 void delayUSec(std::uint8_t usec);
 
 void syslog(const char* msg);

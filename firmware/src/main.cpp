@@ -129,6 +129,8 @@ void poll1kHz()
 {
     const auto supply_voltage_mv = board::getSupplyVoltageInMillivolts();
 
+    const auto pwm_input = board::getPwmInputPeriodInMicroseconds();
+
     if (board::hadButtonPressEvent())
     {
         /*
@@ -166,6 +168,11 @@ void poll1kHz()
         lltoa(supply_voltage_mv, buf);
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
+
+        // Printing the PWM input state
+        lltoa(pwm_input, buf);
+        board::syslog(static_cast<const char*>(buf));
+        board::syslog(" usec\r\n");
     }
 }
 

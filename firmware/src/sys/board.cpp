@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <array>
+#include <uavcan_lpc11c24/clock.hpp>
 
 #ifndef BOARD_OLIMEX_LPC_P11C24
 #define BOARD_OLIMEX_LPC_P11C24 0
@@ -36,6 +37,9 @@ constexpr std::uint32_t TargetSystemCoreClock = 48000000;
 
 constexpr unsigned AdcReferenceMillivolts = 3300;
 constexpr unsigned AdcResolutionBits = 10;
+
+constexpr unsigned PwmPortNum = 2;
+constexpr unsigned PwmInputPinMask = 1U << 10;
 
 template <unsigned NumPins>
 struct PinGroup
@@ -125,6 +129,12 @@ constexpr PinGroup<2> MagnetCtrl23(2, {7, 8});
 
 // TODO: DIP switch pins are not yet defined
 }
+
+constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
+constexpr std::uint32_t PwmInputPeriodMaxUSec = 2500;
+constexpr std::uint32_t PwmInputTimeoutUSec   = 100000;
+static std::uint32_t pwm_input_period_usec;
+static uavcan::MonotonicTime last_pwm_input_update_ts;
 
 struct PinMuxGroup
 {
@@ -238,6 +248,13 @@ void initGpio()
 
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
+
+    // PWM input config
+    LPC_GPIO[PwmPortNum].IBE |= PwmInputPinMask;
+    LPC_GPIO[PwmPortNum].IE  |= PwmInputPinMask;
+
+    NVIC_EnableIRQ(EINT2_IRQn);
+    NVIC_SetPriority(EINT2_IRQn, 0);    // Highest
 }
 
 void initAdc()
@@ -373,6 +390,18 @@ unsigned getSupplyVoltageInMillivolts()
     return x;
 }
 
+#if __GNUC__
+__attribute__((optimize(1)))    // Fails
+#endif
+unsigned getPwmInputPeriodInMicroseconds()
+{
+    if ((uavcan_lpc11c24::clock::getMonotonic() - last_pwm_input_update_ts).toUSec() > PwmInputTimeoutUSec)
+    {
+        pwm_input_period_usec = 0;
+    }
+    return pwm_input_period_usec;
+}
+
 void delayUSec(std::uint8_t usec)
 {
     /*
@@ -403,6 +432,45 @@ void syslog(const char* msg)
 
 extern "C"
 {
+
+void PIOINT2_IRQHandler();
+void PIOINT2_IRQHandler()
+{
+    using namespace board;
+
+    if ((LPC_GPIO[PwmPortNum].MIS & PwmInputPinMask) != 0)
+    {
+        LPC_GPIO[PwmPortNum].IC = PwmInputPinMask;
+
+        static uavcan::MonotonicTime prev_ts;
+        const auto ts = uavcan_lpc11c24::clock::getMonotonic();         // TODO: Is it safe to call it from here?
+        const auto diff_usec = static_cast<std::uint64_t>((ts - prev_ts).toUSec());
+        prev_ts = ts;
+
+        const bool input_state = (LPC_GPIO[PwmPortNum].DATA[PwmInputPinMask] & PwmInputPinMask) != 0;
+
+        if (!input_state)       // Updating only on trailing edge
+        {
+            last_pwm_input_update_ts = ts;
+
+            if (diff_usec >= PwmInputPeriodMinUSec && diff_usec <= PwmInputPeriodMaxUSec)
+            {
+                if (pwm_input_period_usec == 0)
+                {
+                    pwm_input_period_usec = static_cast<std::uint32_t>(diff_usec);
+                }
+                else
+                {
+                    pwm_input_period_usec = static_cast<std::uint32_t>((pwm_input_period_usec + diff_usec) / 2);
+                }
+            }
+            else
+            {
+                pwm_input_period_usec = 0;      // Invalid value
+            }
+        }
+    }
+}
 
 void Chip_SYSCTL_PowerUp(std::uint32_t powerupmask)
 {
