@@ -32,6 +32,8 @@ std::uint8_t readDipSwitch();
 
 bool hadButtonPressEvent();
 
+unsigned getSupplyVoltageInMillivolts();
+
 void delayUSec(std::uint8_t usec);
 
 void syslog(const char* msg);

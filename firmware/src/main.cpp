@@ -94,8 +94,41 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
     }
 }
 
+void reverse(char* s)
+{
+    for (int i = 0, j = int(std::strlen(s)) - 1; i < j; i++, j--)
+    {
+        const char c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
+}
+
+void lltoa(long long n, char buf[24])
+{
+    const short sign = (n < 0) ? -1 : 1;
+    if (sign < 0)
+    {
+        n = -n;
+    }
+    unsigned i = 0;
+    do
+    {
+        buf[i++] = char(n % 10 + '0');
+    }
+    while ((n /= 10) > 0);
+    if (sign < 0)
+    {
+        buf[i++] = '-';
+    }
+    buf[i] = '\0';
+    reverse(buf);
+}
+
 void poll1kHz()
 {
+    const auto supply_voltage_mv = board::getSupplyVoltageInMillivolts();
+
     if (board::hadButtonPressEvent())
     {
         /*
@@ -127,6 +160,12 @@ void poll1kHz()
         board::delayUSec(5);
         board::setMagnetBridgeState(board::MagnetBridgeState::BothLow);
         last_magnet_state = !last_magnet_state;
+
+        // Printing the supply voltage
+        char buf[24];
+        lltoa(supply_voltage_mv, buf);
+        board::syslog(static_cast<const char*>(buf));
+        board::syslog(" mV\r\n");
     }
 }
 

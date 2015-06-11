@@ -34,6 +34,9 @@ namespace
 
 constexpr std::uint32_t TargetSystemCoreClock = 48000000;
 
+constexpr unsigned AdcReferenceMillivolts = 3300;
+constexpr unsigned AdcResolutionBits = 10;
+
 template <unsigned NumPins>
 struct PinGroup
 {
@@ -237,6 +240,18 @@ void initGpio()
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
 }
 
+void initAdc()
+{
+    constexpr unsigned SamplesPerSecond = 1000;
+
+    auto clock = ::ADC_CLOCK_SETUP_T();
+    Chip_ADC_Init(LPC_ADC, &clock);
+
+    Chip_ADC_SetSampleRate(LPC_ADC, &clock, SamplesPerSecond);
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);
+    Chip_ADC_SetBurstCmd(LPC_ADC, ENABLE);
+}
+
 void initUart()
 {
     Chip_UART_Init(LPC_USART);
@@ -252,7 +267,7 @@ void init()
     initWatchdog();
     initClock();
     initGpio();
-    // TODO: ADC initalization
+    initAdc();
     initUart();
 
     resetWatchdog();
@@ -343,6 +358,21 @@ bool hadButtonPressEvent()
     }
 }
 
+unsigned getSupplyVoltageInMillivolts()
+{
+    static std::uint16_t old_value = 0;
+
+    std::uint16_t new_value = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &new_value);
+
+    // Division and multiplication by 2 are reduced
+    const unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
+                                             AdcResolutionBits);
+
+    old_value = new_value;
+    return x;
+}
+
 void delayUSec(std::uint8_t usec)
 {
     /*
@@ -373,6 +403,11 @@ void syslog(const char* msg)
 
 extern "C"
 {
+
+void Chip_SYSCTL_PowerUp(std::uint32_t powerupmask)
+{
+    board::sysctlPowerUp(powerupmask);
+}
 
 void SystemInit();
 
