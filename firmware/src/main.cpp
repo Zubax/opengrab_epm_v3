@@ -131,7 +131,7 @@ void lltoa(long long n, char buf[24])
     reverse(buf);
 }
 
-void poll1kHz()
+void poll()
 {
     const auto supply_voltage_mv = board::getSupplyVoltageInMillivolts();
 
@@ -199,8 +199,7 @@ int main()
 
     while (true)
     {
-        // Spin duration defines poll interval for other functions
-        const int res = getNode().spin(uavcan::MonotonicDuration::fromMSec(1));
+        const int res = getNode().spinOnce();
         if (res < 0)
         {
             board::syslog("Spin err ");
@@ -208,7 +207,7 @@ int main()
             board::syslog(static_cast<const char*>(s));
         }
 
-        poll1kHz();
+        poll();
 
         board::resetWatchdog();
     }
