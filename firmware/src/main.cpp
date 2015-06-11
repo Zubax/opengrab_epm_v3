@@ -14,6 +14,12 @@
 namespace
 {
 
+struct CriticalSectionLocker
+{
+    CriticalSectionLocker()  { __disable_irq(); }
+    ~CriticalSectionLocker() { __enable_irq(); }
+};
+
 typedef uavcan::Node<2800> Node;
 
 Node& getNode()
@@ -148,9 +154,12 @@ void poll1kHz()
         // Charging
         for (unsigned i = 0; i < 2; i++)
         {
-            board::setChargePumpSwitch(true);
-            board::delayUSec(2);
-            board::setChargePumpSwitch(false);
+            {
+                CriticalSectionLocker locker;
+                board::setChargePumpSwitch(true);
+                board::delayUSec(2);
+                board::setChargePumpSwitch(false);
+            }
             board::delayUSec(10);
         }
 
