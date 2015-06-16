@@ -162,7 +162,7 @@ void poll()
                 board::delayUSec(2);
                 //board::setChargePumpSwitch(false);
                 board::setChargePumpSwitchHigh(false);
-                board::setChargePumpSwitchHigh(false);
+                board::setChargePumpSwitchLow(false);
                 
             }
             board::delayUSec(20);
