@@ -156,13 +156,13 @@ void poll()
         {
             {
                 CriticalSectionLocker locker;
-                board::setChargePumpSwitch_H(true);
-                board::setChargePumpSwitch_L(true);
+                board::setChargePumpSwitchHigh(true);
+                board::setChargePumpSwitchLow(true);
             
                 board::delayUSec(2);
                 //board::setChargePumpSwitch(false);
-                board::setChargePumpSwitch_H(false);
-                board::setChargePumpSwitch_L(false);
+                board::setChargePumpSwitchHigh(false);
+                board::setChargePumpSwitchHigh(false);
                 
             }
             board::delayUSec(20);

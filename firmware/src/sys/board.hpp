@@ -18,8 +18,8 @@ void resetWatchdog();
 void setStatusLed(bool state);
 void setCanLed(bool state);
 
-void setChargePumpSwitch_H(bool state);
-void setChargePumpSwitch_L(bool state);
+void setChargePumpSwitchHigh(bool state);
+void setChargePumpSwitchLow(bool state);
 
 enum class MagnetBridgeState : std::uint8_t
 {
