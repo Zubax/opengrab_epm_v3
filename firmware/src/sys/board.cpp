@@ -122,7 +122,9 @@ constexpr Pin CanLed(2, 6);
 #endif
 constexpr Pin StatusLed(2, 0);
 
-constexpr PinGroup<2> PumpSwitch(3, {0, 1});
+//constexpr PinGroup<2> PumpSwitch(3, {0, 1});
+constexpr Pin PumpSwitch_H(3, 0);
+constexpr Pin PumpSwitch_L(3, 1);
 
 constexpr PinGroup<2> MagnetCtrl14(1, {0, 1});
 constexpr PinGroup<2> MagnetCtrl23(2, {7, 8});
@@ -244,8 +246,9 @@ void initGpio()
 
     gpio::CanLed.makeOutputAndSet(false);
 
-    gpio::PumpSwitch.makeOutputsAndSet(0);
-
+    gpio::PumpSwitch_L.makeOutputsAndSet(0);
+	gpio::PumpSwitch_H.makeOutputsAndSet(0);
+	
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
 
@@ -328,9 +331,17 @@ void setCanLed(bool state)
     gpio::CanLed.set(state);
 }
 
-void setChargePumpSwitch(bool state)
+//void setChargePumpSwitch(bool state)
+//{
+//    gpio::PumpSwitch.set(state ? 0b11 : 0b00);
+//}
+void setChargePumpSwitch_H(bool state)
 {
-    gpio::PumpSwitch.set(state ? 0b11 : 0b00);
+    gpio::PumpSwitch_H.set(state);
+}
+void setChargePumpSwitch_L(bool state)
+{
+    gpio::PumpSwitch_L.set(state);
 }
 
 void setMagnetBridgeState(const MagnetBridgeState state)

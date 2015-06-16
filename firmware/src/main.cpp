@@ -156,11 +156,16 @@ void poll()
         {
             {
                 CriticalSectionLocker locker;
-                board::setChargePumpSwitch(true);
+                board::setChargePumpSwitch_H(true);
+                board::setChargePumpSwitch_L(true);
+            
                 board::delayUSec(2);
-                board::setChargePumpSwitch(false);
+                //board::setChargePumpSwitch(false);
+                board::setChargePumpSwitch_H(false);
+                board::setChargePumpSwitch_L(false);
+                
             }
-            board::delayUSec(10);
+            board::delayUSec(20);
         }
 
         // Toggling the magnet
