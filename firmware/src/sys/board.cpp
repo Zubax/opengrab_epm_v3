@@ -246,8 +246,8 @@ void initGpio()
 
     gpio::CanLed.makeOutputAndSet(false);
 
-    gpio::PumpSwitch_L.makeOutputsAndSet(0);
-	gpio::PumpSwitch_H.makeOutputsAndSet(0);
+    gpio::PumpSwitch_L.makeOutputAndSet(false);
+	gpio::PumpSwitch_H.makeOutputAndSet(false);
 	
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
