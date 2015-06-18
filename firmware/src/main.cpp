@@ -152,22 +152,44 @@ void poll()
         blinkStatusMs(30, 3);
 
         // Charging
-        for (unsigned i = 0; i < 2; i++)
+        for (unsigned i = 0; i < 500; i++)
         {
-            {
-                CriticalSectionLocker locker;
-                board::setChargePumpSwitchHigh(true);
-                board::setChargePumpSwitchLow(true);
+		
+				CriticalSectionLocker locker;
+				//board::setChargePumpSwitch(true);
+				//board::setChargePumpSwitch(true);
+				
+				
+				board::setChargePumpSwitchHigh(true);
+				board::setChargePumpSwitchLow(true);
             
-                board::delayUSec(2);
-                //board::setChargePumpSwitch(false);
-                board::setChargePumpSwitchHigh(false);
-                board::setChargePumpSwitchLow(false);
-                
-            }
-            board::delayUSec(20);
-        }
-
+				board::delayUSec(15);
+				board::setChargePumpSwitchLow(false);
+				
+				board::delayUSec(5);
+				board::setChargePumpSwitchLow(true);
+				
+				board::delayUSec(20);
+				board::setChargePumpSwitchHigh(false);
+				
+				board::delayUSec(5);
+				board::setChargePumpSwitchHigh(true);
+				
+				board::delayUSec(15);
+				board::setChargePumpSwitchLow(false);
+				
+				board::delayUSec(5);
+				board::setChargePumpSwitchLow(true);
+				
+				board::delayUSec(20);
+				board::setChargePumpSwitchHigh(false);
+				
+				
+				board::delayUSec(5);
+	
+        }   
+        
+      
         // Toggling the magnet
         static bool last_magnet_state = false;
         board::setMagnetBridgeState(last_magnet_state ?

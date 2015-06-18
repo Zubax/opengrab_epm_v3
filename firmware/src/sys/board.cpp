@@ -123,8 +123,8 @@ constexpr Pin CanLed(2, 6);
 constexpr Pin StatusLed(2, 0);
 
 //constexpr PinGroup<2> PumpSwitch(3, {0, 1});
-constexpr Pin PumpSwitchHigh(3, 0);
-constexpr Pin PumpSwitchLow(3, 1);
+constexpr Pin PumpSwitchHigh(3, 1);
+constexpr Pin PumpSwitchLow(3, 0);
 
 constexpr PinGroup<2> MagnetCtrl14(1, {0, 1});
 constexpr PinGroup<2> MagnetCtrl23(2, {7, 8});
