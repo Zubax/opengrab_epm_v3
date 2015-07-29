@@ -157,15 +157,11 @@ void poll()
         {
 		
 				CriticalSectionLocker locker;
-				//board::setChargePumpSwitch(true);
-				//board::setChargePumpSwitch(true);
+								
+				board::setPumpSwitch(0b1111);
 				
-				
-				board::setPumpSwitch(true);
-				//board::setChargePumpSwitchLow(true);
-            
 				board::delayUSec(15);
-				board::setPumpSwitch(false);
+				board::setPumpSwitch(0b0000);
 				
 				board::delayUSec(5);
 	
@@ -189,6 +185,7 @@ void poll()
 
         // Printing the PWM input state
         lltoa(pwm_input, buf);
+        board::syslog("PWM width: ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" usec\r\n");
     }
