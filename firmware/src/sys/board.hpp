@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Zubax Robotics, zubax.com
- * Distributed under the MIT License, available in the file LICENSE.
+ * Distributed under the MIT License, available in the file LICENS
  * Author: Pavel Kirienko <pavel.kirienko@zubax.com>
  */
 
@@ -18,8 +18,8 @@ void resetWatchdog();
 void setStatusLed(bool state);
 void setCanLed(bool state);
 
-void setChargePumpSwitchHigh(bool state);
-void setChargePumpSwitchLow(bool state);
+void setPumpSwitch(bool state);
+//void setChargePumpSwitchLow(bool state);
 
 enum class MagnetBridgeState : std::uint8_t
 {

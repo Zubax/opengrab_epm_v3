@@ -122,9 +122,9 @@ constexpr Pin CanLed(2, 6);
 #endif
 constexpr Pin StatusLed(2, 0);
 
-//constexpr PinGroup<2> PumpSwitch(3, {0, 1});
-constexpr Pin PumpSwitchHigh(3, 1);
-constexpr Pin PumpSwitchLow(3, 0);
+constexpr PinGroup<4> PumpSwitch(1, {0, 1, 2, 4});
+//constexpr Pin PumpSwitchHigh(3, 1);
+//constexpr Pin PumpSwitchLow(3, 0);
 
 constexpr PinGroup<2> MagnetCtrl14(1, {0, 1});
 constexpr PinGroup<2> MagnetCtrl23(2, {7, 8});
@@ -156,8 +156,8 @@ constexpr PinMuxGroup pinmux[] =
     // PIO0
     { IOCON_PIO0_11, IOCON_FUNC2 },                                                             // Vin_ADC
     // PIO1
-    { IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_1
-    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_4
+    //{ IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_1
+  //  { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL_4
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO1_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // LED2
@@ -172,8 +172,10 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // CTRL_3
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
     // PIO3
-    { IOCON_PIO3_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_L
-    { IOCON_PIO3_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // SW_H
+    { IOCON_PIO1_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PUMP SW0 
+    { IOCON_PIO1_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PUMP SW1
+    { IOCON_PIO1_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PUMP SW2
+    { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PUMP SW4
 };
 
 
@@ -246,8 +248,8 @@ void initGpio()
 
     gpio::CanLed.makeOutputAndSet(false);
 
-    gpio::PumpSwitchLow.makeOutputAndSet(false);
-	gpio::PumpSwitchHigh.makeOutputAndSet(false);
+    gpio::PumpSwitch.makeOutputsAndSet(false);
+	//gpio::PumpSwitchHigh.makeOutputAndSet(false);
 	
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
@@ -335,14 +337,14 @@ void setCanLed(bool state)
 //{
 //    gpio::PumpSwitch.set(state ? 0b11 : 0b00);
 //}
-void setChargePumpSwitchHigh(bool state)
+void setPumpSwitch(bool state)
 {
-    gpio::PumpSwitchHigh.set(state);
+    gpio::PumpSwitch.set(state);
 }
-void setChargePumpSwitchLow(bool state)
-{
-    gpio::PumpSwitchLow.set(state);
-}
+//void setChargePumpSwitchLow(bool state)
+//{
+//    gpio::PumpSwitchLow.set(state);
+//}
 
 void setMagnetBridgeState(const MagnetBridgeState state)
 {

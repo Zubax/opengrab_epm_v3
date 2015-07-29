@@ -41,6 +41,7 @@ __attribute__((noinline))
 #endif
 void init()
 {
+	board::syslog("Init started \r\n");
     board::resetWatchdog();
 
     if (uavcan_lpc11c24::CanDriver::instance().init(1000000) < 0)
@@ -160,30 +161,11 @@ void poll()
 				//board::setChargePumpSwitch(true);
 				
 				
-				board::setChargePumpSwitchHigh(true);
-				board::setChargePumpSwitchLow(true);
+				board::setPumpSwitch(true);
+				//board::setChargePumpSwitchLow(true);
             
 				board::delayUSec(15);
-				board::setChargePumpSwitchLow(false);
-				
-				board::delayUSec(5);
-				board::setChargePumpSwitchLow(true);
-				
-				board::delayUSec(20);
-				board::setChargePumpSwitchHigh(false);
-				
-				board::delayUSec(5);
-				board::setChargePumpSwitchHigh(true);
-				
-				board::delayUSec(15);
-				board::setChargePumpSwitchLow(false);
-				
-				board::delayUSec(5);
-				board::setChargePumpSwitchLow(true);
-				
-				board::delayUSec(20);
-				board::setChargePumpSwitchHigh(false);
-				
+				board::setPumpSwitch(false);
 				
 				board::delayUSec(5);
 	
