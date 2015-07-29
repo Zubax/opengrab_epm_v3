@@ -169,12 +169,12 @@ void poll()
         
       
         // Toggling the magnet
+        board::setMagnetPos();
+        board::setMagnetNeg();
+        
+        
         static bool last_magnet_state = false;
-        board::setMagnetBridgeState(last_magnet_state ?
-                                    board::MagnetBridgeState::RightHighLeftLow :
-                                    board::MagnetBridgeState::RightLowLeftHigh);
-        board::delayUSec(5);
-        board::setMagnetBridgeState(board::MagnetBridgeState::BothLow);
+    
         last_magnet_state = !last_magnet_state;
 
         // Printing the supply voltage
@@ -182,6 +182,8 @@ void poll()
         lltoa(supply_voltage_mv, buf);
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
+        
+    
 
         // Printing the PWM input state
         lltoa(pwm_input, buf);

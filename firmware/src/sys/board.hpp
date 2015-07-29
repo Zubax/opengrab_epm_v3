@@ -8,7 +8,7 @@
 
 namespace board
 {
-
+	
 constexpr unsigned UniqueIDSize = 16;
 
 void readUniqueID(std::uint8_t out_uid[UniqueIDSize]);
@@ -19,7 +19,6 @@ void setStatusLed(bool state);
 void setCanLed(bool state);
 
 void setPumpSwitch(bool state);
-//void setChargePumpSwitchLow(bool state);
 
 enum class MagnetBridgeState : std::uint8_t
 {
@@ -27,13 +26,16 @@ enum class MagnetBridgeState : std::uint8_t
     RightHighLeftLow,
     RightLowLeftHigh
 };
-void setMagnetBridgeState(const MagnetBridgeState state);
+void setMagnetPos();
+void setMagnetNeg();
 
 std::uint8_t readDipSwitch();
 
 bool hadButtonPressEvent();
 
 unsigned getSupplyVoltageInMillivolts();
+
+unsigned getOutVoltageInVolts();
 
 unsigned getPwmInputPeriodInMicroseconds();
 
