@@ -168,18 +168,18 @@ constexpr PinMuxGroup pinmux[] =
     
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
-	// PIO1 PUMP
-	{ IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW0
-	{ IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW1
-	{ IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW2
-	{ IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW4
+    // PIO1 PUMP
+    { IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW0
+    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW1
+    { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW2
+    { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW4
 	
-	// PIO2 CTRL
-	{ IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3 
-	{ IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL2
+    // PIO2 CTRL
+    { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3 
+    { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL2
 	
-	{ IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4	
-	{ IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL1
+    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4	
+    { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL1
 		
 };
 
@@ -339,15 +339,16 @@ void setCanLed(bool state)
 
 void setMagnetPos()
 {
-	gpio::MagnetCtrl23.set(0b11);
-	board::delayUSec(5);
-	gpio::MagnetCtrl23.set(0b00);
+    gpio::MagnetCtrl23.set(0b11);
+    board::delayUSec(5);
+    gpio::MagnetCtrl23.set(0b00);
 }
+
 void setMagnetNeg()
 {
-	gpio::MagnetCtrl14.set(0b11);
-	board::delayUSec(5);
-	gpio::MagnetCtrl14.set(0b00);
+    gpio::MagnetCtrl14.set(0b11);
+    board::delayUSec(5);
+    gpio::MagnetCtrl14.set(0b00);
 }
 
 std::uint8_t readDipSwitch()
@@ -385,7 +386,7 @@ unsigned getSupplyVoltageInMillivolts()
                                              AdcResolutionBits);
 	
     old_value = new_value;
-    return x*5;						//Voltage divider on board 
+    return x*5;						//Voltage divider on board, shoud not go here
 }
 
 unsigned getOutVoltageInVolts()
