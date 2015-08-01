@@ -338,11 +338,6 @@ void setCanLed(bool state)
     gpio::CanLed.set(state);
 }
 
-void setPumpSwitch(bool state)
-{
-    gpio::PumpSwitch.set(state ? 0b1111 : 0b0000);
-}
-
 void setMagnetPos()
 {
 	gpio::MagnetCtrl23.set(0b11);
