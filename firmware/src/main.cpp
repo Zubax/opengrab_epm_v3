@@ -196,6 +196,7 @@ void poll()
                 board::delayUSec(1);
         }   
         
+        //wait for debuging 
 		board::delayUSec(255);
 		board::delayUSec(255);
 		board::delayUSec(255);
@@ -216,6 +217,7 @@ void poll()
 		board::delayUSec(255);
 		board::delayUSec(255);
 		board::delayUSec(255);
+        
         // Toggling the magnet
 		if(magnetState == true) 
 		{
