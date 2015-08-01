@@ -121,9 +121,7 @@ constexpr Pin CanLed(1, 11);
 constexpr Pin CanLed(2, 6);
 #endif
 constexpr Pin StatusLed(2, 0);
-
 constexpr PinGroup<4> PumpSwitch(1, {0, 1, 2, 4});
-
 constexpr PinGroup<2> MagnetCtrl23(2, {1, 7});
 constexpr PinGroup<2> MagnetCtrl14(2, {2, 8});
 
@@ -151,9 +149,11 @@ struct PinMuxGroup
  */
 constexpr PinMuxGroup pinmux[] =
 {
-    // PIO0
-    { IOCON_PIO0_11, IOCON_FUNC2 },                                                             // Vin_ADC
-   
+    // PIO1 ADC
+    { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN }, 			            // Vin_ADC
+    
+    // PIO0 ADC 
+    { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN }, 						// Vout_ADC
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
@@ -161,7 +161,7 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_11, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // CAN LED
 #endif
     // PIO2
-    { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN},                         // Status LED
+    { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                         // Status LED
 #if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
@@ -169,10 +169,10 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
 	// PIO1 PUMP
-	{ IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },						//PUMP SW0
-	{ IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },						//PUMP SW1
-	{ IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },		//PUMP SW2
-	{ IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },		//PUMP SW4
+	{ IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },		//only this one works				//PUMP SW0
+	{ IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },		//PUMP SW1
+	{ IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },		//PUMP SW2
+	{ IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },		//PUMP SW4
 	
 	// PIO2 CTRL
 	{ IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },		//CTRL3 
@@ -183,9 +183,6 @@ constexpr PinMuxGroup pinmux[] =
 	
 	
 };
-
-
-
 
 void sysctlPowerDown(unsigned long powerdownmask)
 {
@@ -256,7 +253,7 @@ void initGpio()
 
     gpio::CanLed.makeOutputAndSet(false);
 
-    gpio::PumpSwitch.makeOutputsAndSet(false);
+    gpio::PumpSwitch.makeOutputsAndSet(0b0000);
 	
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
@@ -277,7 +274,8 @@ void initAdc()
     Chip_ADC_Init(LPC_ADC, &clock);
 
     Chip_ADC_SetSampleRate(LPC_ADC, &clock, SamplesPerSecond);
-    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);		//Vin
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);		//Vout
     Chip_ADC_SetBurstCmd(LPC_ADC, ENABLE);
 }
 
@@ -342,7 +340,7 @@ void setCanLed(bool state)
 
 void setPumpSwitch(bool state)
 {
-    gpio::PumpSwitch.set(state);
+    gpio::PumpSwitch.set(state ? 0b1111 : 0b0000);
 }
 
 void setMagnetPos()
@@ -386,15 +384,16 @@ unsigned getSupplyVoltageInMillivolts()
     static std::uint16_t old_value = 0;
 
     std::uint16_t new_value = 0;
-    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &new_value);
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH6, &new_value);
 
     // Division and multiplication by 2 are reduced
     const unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
                                              AdcResolutionBits);
-
+	
     old_value = new_value;
-    return x;
+    return x*5;						//Voltage divider on board 
 }
+
 unsigned getOutVoltageInVolts()
 {
     static std::uint16_t old_value = 0;
