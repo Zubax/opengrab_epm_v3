@@ -2,8 +2,9 @@
  * Copyright (c) 2015 Zubax Robotics, zubax.com
  * Distributed under the MIT License, available in the file LICENSE.
  * Author: Pavel Kirienko <pavel.kirienko@zubax.com>
+ * Author: Andreas Jochum <Andreas@Nicadrone.com>
  *
- * Board initialization for Olimex LPC11C24
+ * Board initialization for Olimex LPC11C24 and EPM hard
  */
 
 #include "board.hpp"
@@ -150,10 +151,10 @@ struct PinMuxGroup
 constexpr PinMuxGroup pinmux[] =
 {
     // PIO1 ADC
-    { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN },                        // Vin_ADC
+    { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
     
     // PIO0 ADC 
-    { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN },                        // Vout_ADC
+    { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vout_ADC
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
@@ -173,14 +174,14 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW1
     { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW2
     { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW4
-	
+
     // PIO2 CTRL
     { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3 
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL2
-	
-    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4	
+
+    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4
     { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL1
-		
+
 };
 
 void sysctlPowerDown(unsigned long powerdownmask)
@@ -253,7 +254,7 @@ void initGpio()
     gpio::CanLed.makeOutputAndSet(false);
 
     gpio::PumpSwitch.makeOutputsAndSet(0b0000);
-	
+
     gpio::MagnetCtrl23.makeOutputsAndSet(0);
     gpio::MagnetCtrl14.makeOutputsAndSet(0);
 
@@ -273,8 +274,8 @@ void initAdc()
     Chip_ADC_Init(LPC_ADC, &clock);
 
     Chip_ADC_SetSampleRate(LPC_ADC, &clock, SamplesPerSecond);
-    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);		//Vin
-    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);		//Vout
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);       //Vin
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);       //Vout
     Chip_ADC_SetBurstCmd(LPC_ADC, ENABLE);
 }
 
@@ -340,14 +341,14 @@ void setCanLed(bool state)
 void setMagnetPos()
 {
     gpio::MagnetCtrl23.set(0b11);
-    board::delayUSec(5);
+    board::delayUSec(20);
     gpio::MagnetCtrl23.set(0b00);
 }
 
 void setMagnetNeg()
 {
     gpio::MagnetCtrl14.set(0b11);
-    board::delayUSec(5);
+    board::delayUSec(20);
     gpio::MagnetCtrl14.set(0b00);
 }
 
@@ -384,9 +385,9 @@ unsigned getSupplyVoltageInMillivolts()
     // Division and multiplication by 2 are reduced
     const unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
                                              AdcResolutionBits);
-	
+
     old_value = new_value;
-    return x*5;						//Voltage divider on board, shoud not go here
+    return x*5;                     //Voltage divider on board, shoud not go here
 }
 
 unsigned getOutVoltageInVolts()

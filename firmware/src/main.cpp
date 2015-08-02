@@ -2,23 +2,28 @@
  * Copyright (c) 2015 Zubax Robotics, zubax.com
  * Distributed under the MIT License, available in the file LICENSE.
  * Author: Pavel Kirienko <pavel.kirienko@zubax.com>
+ * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
 
 /* todo
  * VDD CAN is Vin, generate critical error when Vin >6.5V, abs max 7V, CAN transiver limit
  * BOR detect
- * It would be nice to write critial errors to flash
  */
 
 #include <cstdio>
+#include "util.hpp"
 #include <algorithm>
 #include <board.hpp>
+#include <charger.hpp>
 #include <chip.h>
 #include <uavcan_lpc11c24/uavcan_lpc11c24.hpp>
 #include <uavcan/protocol/logger.hpp>
 
 bool magnetState = false; 
+
+charger cap;
+
 namespace
 {
 
@@ -109,36 +114,6 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
     }
 }
 
-void reverse(char* s)
-{
-    for (int i = 0, j = int(std::strlen(s)) - 1; i < j; i++, j--)
-    {
-        const char c = s[i];
-        s[i] = s[j];
-        s[j] = c;
-    }
-}
-
-void lltoa(long long n, char buf[24])
-{
-    const short sign = (n < 0) ? -1 : 1;
-    if (sign < 0)
-    {
-        n = -n;
-    }
-    unsigned i = 0;
-    do
-    {
-        buf[i++] = char(n % 10 + '0');
-    }
-    while ((n /= 10) > 0);
-    if (sign < 0)
-    {
-        buf[i++] = '-';
-    }
-    buf[i] = '\0';
-    reverse(buf);
-}
 
 void magnetOn()
 {
@@ -154,7 +129,7 @@ void poll()
 {
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
     
-    const auto output_voltage_V  = board::getOutVoltageInVolts();
+//    const auto output_voltage_V  = board::getOutVoltageInVolts();
 
     const auto pwm_input = board::getPwmInputPeriodInMicroseconds();
 
@@ -171,85 +146,64 @@ void poll()
 
         // Indication
         blinkStatusMs(30, 3);
-
+   //     int on_time=2;         
+        
+        cap.run();
         // Charging 
-        for (unsigned i = 0; i < 1000; i++)
+  /*      for (unsigned i = 0; i < 1000; i++)
         {
-            
-		
-				CriticalSectionLocker locker;
-				
-                LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-                board::delayUSec(2);
-                LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-                board::delayUSec(2);
+            CriticalSectionLocker locker;
+
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            for(volatile int i=0;i<on_time;i++)
+            {
+                __asm volatile ("nop");
+            }
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(2);
         }  
         for (unsigned i = 0; i < 120000; i++)
         {
-            
-		
-				CriticalSectionLocker locker;
-				
-                LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-                board::delayUSec(2);
-                LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-                board::delayUSec(1);
-        }   
+            CriticalSectionLocker locker;
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(2);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
+        }
+*/
+      
+
         
         //wait for debuging 
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
-		board::delayUSec(255);
+        board::delayUSec(5);
         
         // Toggling the magnet
-		if(magnetState == true) 
-		{
-			board::syslog("Calling mangetOff");
-			board::syslog("\r\n");
-			magnetOff();
-		}
-		if(magnetState == false)
-		{
-			board::syslog("Calling magnetOn");
-			board::syslog("\r\n");
-			magnetOn();
-		}
-		magnetState = !magnetState;
+        if(magnetState == true) 
+        {
+        magnetOff();
+        board::syslog("Calling mangetOff");
+        board::syslog("\r\n");
+    }
+
+    if(magnetState == false)
+    {
+        magnetOn();
+        board::syslog("Calling magnetOn");
+        board::syslog("\r\n");
+    }
+    magnetState = !magnetState;
         
         board::syslog("Magnet state: ");
         board::syslog(magnetState ? "On" : "off");
         board::syslog("\r\n");
 
         // Printing the supply voltage
-        char buf[24];
+	char buf[24];
         lltoa(supply_voltage_mV, buf);
         board::syslog("supply_voltage_mV =  ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
         
-		// Printing the output voltage
-		lltoa(output_voltage_V, buf);
-		board::syslog("output_voltage_V = ");
-        board::syslog(static_cast<const char*>(buf));
-        board::syslog(" mV\r\n");
-
         // Printing the PWM input state
         lltoa(pwm_input, buf);
         board::syslog("PWM width: ");
