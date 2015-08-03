@@ -5,5 +5,18 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
-void lltoa(long long n, char buf[24]);
-void reverse(char* s);
+#pragma once
+
+namespace charger
+{
+
+class Charger
+{
+//    bool state
+public:
+//    Charger(unsigned charge_mJ)
+
+    void run();
+};
+
+}

@@ -5,16 +5,13 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
-#include <cstdio>
+#include <cstring>
 #include "util.hpp"
-#include <algorithm>
-#include <board.hpp>
-#include <charger.hpp>
-#include <chip.h>
-#include <uavcan_lpc11c24/uavcan_lpc11c24.hpp>
-#include <uavcan/protocol/logger.hpp>
 
-void reverse(char* s)
+namespace util
+{
+
+static void reverse(char* s)
 {
     for (int i = 0, j = int(std::strlen(s)) - 1; i < j; i++, j--)
     {
@@ -45,3 +42,4 @@ void lltoa(long long n, char buf[24])
     reverse(buf);
 }
 
+}

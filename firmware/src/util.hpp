@@ -5,18 +5,11 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
-#include <cstdint>
+#pragma once
 
-class charger
+namespace util
 {
-//    bool state
-public:
-//    Charger(unsigned charge_mJ)
 
-//    bool isDone() const
+void lltoa(long long n, char buf[24]);
 
-    void run();
-    void lltoa(long long n, char buf[24]);
-
-
-};
+}

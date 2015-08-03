@@ -12,17 +12,13 @@
  */
 
 #include <cstdio>
-#include "util.hpp"
 #include <algorithm>
 #include <board.hpp>
-#include <charger.hpp>
 #include <chip.h>
 #include <uavcan_lpc11c24/uavcan_lpc11c24.hpp>
 #include <uavcan/protocol/logger.hpp>
-
-bool magnetState = false; 
-
-charger cap;
+#include "charger.hpp"
+#include "util.hpp"
 
 namespace
 {
@@ -34,6 +30,8 @@ struct CriticalSectionLocker
 };
 
 typedef uavcan::Node<2800> Node;
+
+static charger::Charger cap;
 
 Node& getNode()
 {
@@ -114,21 +112,20 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
     }
 }
 
-
 void magnetOn()
 {
     board::setMagnetPos();
 }
+
 void magnetOff()
 {
     board::setMagnetNeg();
 }
 
-
 void poll()
 {
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-    
+
 //    const auto output_voltage_V  = board::getOutVoltageInVolts();
 
     const auto pwm_input = board::getPwmInputPeriodInMicroseconds();
@@ -146,66 +143,66 @@ void poll()
 
         // Indication
         blinkStatusMs(30, 3);
-   //     int on_time=2;         
-        
+        //     int on_time=2;
+
         cap.run();
         // Charging 
-  /*      for (unsigned i = 0; i < 1000; i++)
-        {
-            CriticalSectionLocker locker;
+        /*      for (unsigned i = 0; i < 1000; i++)
+         {
+         CriticalSectionLocker locker;
 
-            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-            for(volatile int i=0;i<on_time;i++)
-            {
-                __asm volatile ("nop");
-            }
-            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-            board::delayUSec(2);
-        }  
-        for (unsigned i = 0; i < 120000; i++)
-        {
-            CriticalSectionLocker locker;
-            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-            board::delayUSec(2);
-            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-            board::delayUSec(1);
-        }
-*/
-      
+         LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+         for(volatile int i=0;i<on_time;i++)
+         {
+         __asm volatile ("nop");
+         }
+         LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+         board::delayUSec(2);
+         }
+         for (unsigned i = 0; i < 120000; i++)
+         {
+         CriticalSectionLocker locker;
+         LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+         board::delayUSec(2);
+         LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+         board::delayUSec(1);
+         }
+         */
 
-        
         //wait for debuging 
         board::delayUSec(5);
-        
-        // Toggling the magnet
-        if(magnetState == true) 
-        {
-        magnetOff();
-        board::syslog("Calling mangetOff");
-        board::syslog("\r\n");
-    }
 
-    if(magnetState == false)
-    {
-        magnetOn();
-        board::syslog("Calling magnetOn");
-        board::syslog("\r\n");
-    }
-    magnetState = !magnetState;
-        
+        static bool magnet_state = false;
+
+        // Toggling the magnet
+        if (magnet_state == true)
+        {
+            magnetOff();
+            board::syslog("Calling mangetOff");
+            board::syslog("\r\n");
+        }
+
+        if (magnet_state == false)
+        {
+            magnetOn();
+            board::syslog("Calling magnetOn");
+            board::syslog("\r\n");
+        }
+        magnet_state = !magnet_state;
+
         board::syslog("Magnet state: ");
-        board::syslog(magnetState ? "On" : "off");
+        board::syslog(magnet_state ? "On" : "off");
         board::syslog("\r\n");
 
         // Printing the supply voltage
-	char buf[24];
-        lltoa(supply_voltage_mV, buf);
+        char buf[24];
+        util::lltoa(supply_voltage_mV, buf);
         board::syslog("supply_voltage_mV =  ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
-        
+
         // Printing the PWM input state
-        lltoa(pwm_input, buf);
+        util::lltoa(pwm_input, buf);
         board::syslog("PWM width: ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" usec\r\n");
