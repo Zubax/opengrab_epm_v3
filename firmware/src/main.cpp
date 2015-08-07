@@ -31,7 +31,7 @@ struct CriticalSectionLocker
 
 typedef uavcan::Node<2800> Node;
 
-static charger::Charger cap;
+static charger::Charger Charger;
 
 Node& getNode()
 {
@@ -114,11 +114,15 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
+    Charger.done=false;
+    Charger.U=100;
+    Charger.run();
     board::setMagnetPos();
 }
 
 void magnetOff()
 {
+    
     board::setMagnetNeg();
 }
 
@@ -135,7 +139,7 @@ void poll()
         /*
          * Push button is pressed
          * LED status blink 3 times fast
-         * Charge the capacitor, for now just pull SW_L and SW_H high twice, ton 2us, toff 10us just for debug
+         * Charge the cacitor, for now just pull SW_L and SW_H high twice, ton 2us, toff 10us just for debug
          * Toggle EPM by
          * Pulling  CTRL 1, 4 or 2,3 high ~5us to toggle state
          */
@@ -143,33 +147,7 @@ void poll()
 
         // Indication
         blinkStatusMs(30, 3);
-        //     int on_time=2;
-
-        cap.run();
-        // Charging 
-        /*      for (unsigned i = 0; i < 1000; i++)
-         {
-         CriticalSectionLocker locker;
-
-         LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-         for(volatile int i=0;i<on_time;i++)
-         {
-         __asm volatile ("nop");
-         }
-         LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-         board::delayUSec(2);
-         }
-         for (unsigned i = 0; i < 120000; i++)
-         {
-         CriticalSectionLocker locker;
-         LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-         board::delayUSec(2);
-         LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-         board::delayUSec(1);
-         }
-         */
-
-        //wait for debuging 
+       
         board::delayUSec(5);
 
         static bool magnet_state = false;

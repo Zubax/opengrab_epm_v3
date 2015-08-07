@@ -22,29 +22,60 @@ void Charger::run()
      * emax = 352,500uJ or 134,000 cycles
      * e = Vout*Vout*1.25 [uJ]
      */
-    for (unsigned i = 0; i < 1000; i++)
-    {
-        LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-        board::delayUSec(1);
-        LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-        board::delayUSec(2);
-    }
+    unsigned t = 0;
+    
+    for (t = 0; t < 1000; t++)                       //This will run no more then 198k cycles. break when output voltage is reached. 
+                                                    //if output voltage is not reached report critical charge error, (capacitor leakage, short or Vin to low)
+                                                    //t<10 for debug, 
 
-    for (unsigned i = 0; i < 10000; i++)
-    {
-        LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
-        board::delayUSec(1);
-        LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
-        board::delayUSec(1);
-    }
+        for (unsigned i = 0; i < 66; i++)           //this takes at worst 1ms then we turn interupt on and run spin Node and other stuff
+        {
+            __disable_irq();
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(1);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
+            
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(1);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
 
-    // Printing the output voltage
-    const auto output_voltage_V = board::getOutVoltageInVolts();
-    char buf[24];
-    util::lltoa(output_voltage_V, buf);
-    board::syslog("output_voltage_V =  ");
-    board::syslog(static_cast<const char*>(buf));
-    board::syslog(" mV\r\n");
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(1);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
+
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(1);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
+
+            LPC_GPIO[1].DATA[0b010111] = 0b010111; // ON
+            board::delayUSec(1);
+            LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+            board::delayUSec(1);
+            __enable_irq();
+        }
+        // interups are enabled again
+
+        const auto output_voltage_V = board::getOutVoltageInVolts();
+        char buf[24];
+
+        //this does not work, it is call a bunch of time on a ~1ms interval but only prints once
+        util::lltoa(output_voltage_V, buf);
+        board::syslog("output_voltage_V =  ");  
+        board::syslog(static_cast<const char*>(buf));   
+        board::syslog(" V\r\n");
+       
+        if(U < board::getOutVoltageInVolts())   //this does not work, even if U is smaller then vout 
+        {
+            done=true;
+            t=2000;                              //breaks the loop
+        }
+        board::resetWatchdog();                 
+    }
+    
 }
 
-}
+

@@ -402,7 +402,7 @@ unsigned getOutVoltageInVolts()
                                              AdcResolutionBits);
 
     old_value = new_value;
-    return x;
+    return x/10;                 //    
 }
 
 #if __GNUC__

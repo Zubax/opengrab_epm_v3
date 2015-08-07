@@ -11,12 +11,19 @@ namespace charger
 {
 
 class Charger
-{
-//    bool state
+{  
+    unsigned ton=0;                     //bussy loop units
+    
+    unsigned toff=0;        
+    
+    
 public:
-//    Charger(unsigned charge_mJ)
 
     void run();
+    
+    unsigned U=0;                       //[V] 0-500
+    
+    bool done=true;                     //charger done, true false
 };
 
 }
