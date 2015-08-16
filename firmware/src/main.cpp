@@ -76,7 +76,7 @@ void init()
     swver.major = FW_VERSION_MAJOR;
     swver.minor = FW_VERSION_MINOR;
     swver.vcs_commit = GIT_HASH;
-    swver.optional_field_mask = swver.OPTIONAL_FIELD_MASK_VCS_COMMIT;
+    swver.optional_field_flags = swver.OPTIONAL_FIELD_FLAG_VCS_COMMIT;
     getNode().setSoftwareVersion(swver);
 
     uavcan::protocol::HardwareVersion hwver;
@@ -198,7 +198,7 @@ int main()
 {
     init();
 
-    getNode().setStatusOk();
+    getNode().setModeOperational();
 
     board::setStatusLed(false);
 
