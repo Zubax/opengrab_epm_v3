@@ -5,7 +5,6 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
-
 /* todo
  * VDD CAN is Vin, generate critical error when Vin >6.5V, abs max 7V, CAN transiver limit
  * BOR detect
@@ -25,13 +24,19 @@ namespace
 
 struct CriticalSectionLocker
 {
-    CriticalSectionLocker()  { __disable_irq(); }
-    ~CriticalSectionLocker() { __enable_irq(); }
+    CriticalSectionLocker()
+    {
+        __disable_irq();
+    }
+    ~CriticalSectionLocker()
+    {
+        __enable_irq();
+    }
 };
 
 typedef uavcan::Node<2800> Node;
 
-static charger::Charger Charger;
+static charger::Charger chrg;
 
 Node& getNode()
 {
@@ -44,7 +49,9 @@ __attribute__((noreturn))
 #endif
 void die()
 {
-    while (true) { }
+    while (true)
+    {
+    }
 }
 
 #if __GNUC__
@@ -73,7 +80,7 @@ void init()
     getNode().setSoftwareVersion(swver);
 
     uavcan::protocol::HardwareVersion hwver;
-    std::uint8_t uid[board::UniqueIDSize] = {};
+    std::uint8_t uid[board::UniqueIDSize] = { };
     board::readUniqueID(uid);
     std::copy(std::begin(uid), std::end(uid), std::begin(hwver.unique_id));
     getNode().setHardwareVersion(hwver);
@@ -114,15 +121,13 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
-    Charger.done=false;
-    Charger.U=100;
-    Charger.run();
+    chrg.restart(100);
+    chrg.run();
     board::setMagnetPos();
 }
 
 void magnetOff()
 {
-    
     board::setMagnetNeg();
 }
 
@@ -147,7 +152,7 @@ void poll()
 
         // Indication
         blinkStatusMs(30, 3);
-       
+
         board::delayUSec(5);
 
         static bool magnet_state = false;
@@ -205,7 +210,7 @@ int main()
         if (res < 0)
         {
             board::syslog("Spin err ");
-            char s[] = {static_cast<char>('A' - res), '\r', '\n', '\0'};
+            char s[] = { static_cast<char>('A' - res), '\r', '\n', '\0' };
             board::syslog(static_cast<const char*>(s));
         }
 
