@@ -13,7 +13,7 @@
 namespace charger
 {
 
-void Charger::run()
+bool Charger::run()
 {
     /*
      * On time is 5.25/(Vin-0.5V) [us, V]
@@ -29,6 +29,30 @@ void Charger::run()
      * if output voltage is not reached report critical charge error, (capacitor leakage, short or Vin to low)
      * t<10 for debug, this takes at worst 1ms then we turn interupt on and run spin Node and other stuff
      */
+
+    //check input voltage
+
+    if(board::getSupplyVoltageInMillivolts() < 4500)
+    {   
+        board::syslog("error undervoltage \r\n"); 
+        char buf[24];
+        util::lltoa(board::getSupplyVoltageInMillivolts(), buf);
+        board::syslog("supply_voltage_mV =  ");
+        board::syslog(static_cast<const char*>(buf));
+        board::syslog(" mV\r\n");
+        return false;
+    }
+    if(board::getSupplyVoltageInMillivolts() > 6000)
+    {   
+        board::syslog("error overvolage \r\n"); 
+        char buf[24];
+        util::lltoa(board::getSupplyVoltageInMillivolts(), buf);
+        board::syslog("supply_voltage_mV =  ");
+        board::syslog(static_cast<const char*>(buf));
+        board::syslog(" mV\r\n");
+        return false;
+    }
+
     for (t = 0; t < 1000; t++)
     {
         for (unsigned i = 0; i < 66; i++) //
@@ -78,6 +102,7 @@ void Charger::run()
     }
 
     board::resetWatchdog();
+    return true;
 }
 
 void Charger::restart(unsigned target_U)

@@ -122,8 +122,12 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 void magnetOn()
 {
     chrg.restart(100);
-    chrg.run();
+    
+    board::syslog(chrg.run() ? "sucess" : "failed");
+    board::syslog("\r\n");
+
     board::setMagnetPos();
+
 }
 
 void magnetOff()

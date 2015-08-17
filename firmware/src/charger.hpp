@@ -18,7 +18,7 @@ class Charger
     bool done_ = true;                          ///< Charger done
 
 public:
-    void run();
+    bool run();
 
     bool isDone() const { return done_; }
 
