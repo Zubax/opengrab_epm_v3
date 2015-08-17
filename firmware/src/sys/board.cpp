@@ -383,11 +383,18 @@ unsigned getSupplyVoltageInMillivolts()
     (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH6, &new_value);
 
     // Division and multiplication by 2 are reduced
-    const unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
+    unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
                                              AdcResolutionBits);
 
     old_value = new_value;
-    return x*5;                     //Voltage divider on board, shoud not go here
+
+    x*=5;
+    x+=700;                             //poor mans calibration, it's within 100mV 
+    if(x < 4500)                        //under 4500mV Vref drops, mesurements useless 
+    {   
+        x = 0;
+    }
+    return x;                     //Voltage divider on board, shoud not go here
 }
 
 unsigned getOutVoltageInVolts()
