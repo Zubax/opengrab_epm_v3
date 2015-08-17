@@ -12,17 +12,20 @@ namespace charger
 
 class Charger
 {
-    unsigned ton_ = 0;                          ///< Busy loop units TODO: This is not used, shall be deleted?
-    unsigned toff_ = 0;
-    unsigned U_ = 0;                            ///< [V] 0-500
-    bool done_ = true;                          ///< Charger done
+    void cycle1000_7000();                      ///1000ns on, 7000ns off, total run time ~1ms
+
+    void cycle1500_5000();              
+    
+    void cycle1500_3000();
+
+    void cycle1500_1500();
+      
+    void cycle2000_500();
+
 
 public:
-    bool run();
+    bool run(unsigned U_);
 
-    bool isDone() const { return done_; }
-
-    void restart(unsigned target_U);
 };
 
 }

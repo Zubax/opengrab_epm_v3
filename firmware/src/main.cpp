@@ -121,25 +121,21 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
-    chrg.restart(100);
-    
-    board::syslog(chrg.run() ? "sucess" : "failed");
-    board::syslog("\r\n");
+    board::syslog(chrg.run(100) ? "sucess \r\n" : "failed \r\n");
 
     board::setMagnetPos();
-
 }
 
 void magnetOff()
 {
-    board::setMagnetNeg();
+    board::syslog(chrg.run(100) ? "sucess \r\n" : "failed \r\n");
+
+    board::setMagnetPos();
 }
 
 void poll()
 {
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-
-//    const auto output_voltage_V  = board::getOutVoltageInVolts();
 
     const auto pwm_input = board::getPwmInputPeriodInMicroseconds();
 
