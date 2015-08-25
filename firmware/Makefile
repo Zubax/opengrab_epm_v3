@@ -83,6 +83,7 @@ VPATH = $(sort $(dir $(CSRC)) $(dir $(CPPSRC)))
 
 ELF = $(BUILDDIR)/firmware.elf
 BIN = $(BUILDDIR)/firmware.bin
+HEX = $(BUILDDIR)/firmware.hex
 
 #
 # Rules
@@ -96,7 +97,7 @@ LD   = $(TOOLCHAIN)g++
 CP   = $(TOOLCHAIN)objcopy
 SIZE = $(TOOLCHAIN)size
 
-all: $(OBJ) $(ELF) $(BIN) size
+all: $(OBJ) $(ELF) $(BIN) $(HEX) size
 
 $(OBJ): | $(BUILDDIR)
 
@@ -108,6 +109,10 @@ $(BUILDDIR):
 $(BIN): $(ELF)
 	@echo
 	$(CP) -O binary $(ELF) $@
+
+$(HEX): $(ELF)
+	@echo
+	$(CP) -O ihex $(ELF) $@
 
 $(ELF): $(OBJ)
 	@echo
