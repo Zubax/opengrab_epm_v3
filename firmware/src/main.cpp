@@ -125,40 +125,41 @@ void magnetOn()
     
     board::setMagnetPos();
     
-    delayMSec(20);
+    delayMSec(5);
     
     board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
     
     board::setMagnetPos();
-    
-    delayMSec(20);
-
-    board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
-    
-    board::setMagnetPos();
-    
-    delayMSec(20);
+ 
+    //limit duty cycle	
+    delayMSec(250);			
+    delayMSec(250);	
 
   
 
 }
-
+static bool magnet_state = false;
 //Todo, this needs to be calibrated 
 void magnetOff()
 {
     unsigned blah=5;
-    board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
 
-    board::setMagnetNeg();
+    if(magnet_state == true)        //If we are not coming from the on state we skip a few cycles     
+    {
+        board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
 
-    delayMSec(blah);
-    board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
+        board::setMagnetNeg();
 
-    board::syslog(chrg.run(300) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    delayMSec(blah);
+        delayMSec(blah);
+        board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
+        board::setMagnetNeg();
 
+        board::syslog(chrg.run(300) ? "sucess \r\n" : "failed \r\n");
+        board::setMagnetPos();
+        delayMSec(blah);
+    }
+
+      
     board::syslog(chrg.run(180) ? "sucess \r\n" : "failed \r\n");
     board::setMagnetNeg();
     delayMSec(blah);
@@ -268,9 +269,12 @@ void magnetOff()
     delayMSec(blah);			
 	
     board::syslog(chrg.run(10) ? "sucess \r\n" : "failed \r\n");			
-    board::setMagnetPos();			
-    delayMSec(blah);			
+    board::setMagnetPos();		
 
+    //limit duty cycle	
+    delayMSec(250);			
+    delayMSec(250);	
+    delayMSec(250);
 
     
 
@@ -297,24 +301,25 @@ void poll()
 
         // Indication
         blinkStatusMs(30, 3);
-
         board::delayUSec(5);
 
-        static bool magnet_state = false;
+        
 
         // Toggling the magnet
         if (magnet_state == true)
         {
-            magnetOff();
+            
             board::syslog("Calling mangetOff");
             board::syslog("\r\n");
+            magnetOff();
         }
 
         if (magnet_state == false)
         {
-            magnetOn();
+            
             board::syslog("Calling magnetOn");
             board::syslog("\r\n");
+            magnetOn();
         }
         magnet_state = !magnet_state;
 
@@ -335,6 +340,31 @@ void poll()
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" usec\r\n");
     }
+
+    
+    if(pwm_input < 1250 && pwm_input > 1000)
+    {
+        
+        blinkStatusMs(30, 3);
+        board::delayUSec(5);
+
+        //Turn magnet off
+        magnetOff();
+        magnet_state = false;
+    }
+    if(pwm_input > 1750 && pwm_input < 2000)
+    {
+        
+        blinkStatusMs(30, 3);
+        board::delayUSec(5);
+
+        //Turn magnet on
+        magnetOn();
+        magnet_state = true;
+    }
+
+        
+    
 }
 
 }
