@@ -42,22 +42,23 @@ bool Charger::run(unsigned U_)
 
     
     //check input voltage
-
-    if(board::getSupplyVoltageInMillivolts() < 4500)
+    
+    const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
+    if(supply_voltage_mV < 4500)
     {   
         board::syslog("error undervoltage \r\n"); 
         char buf[24];
-        util::lltoa(board::getSupplyVoltageInMillivolts(), buf);
+        util::lltoa(supply_voltage_mV, buf);
         board::syslog("supply_voltage_mV =  ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
         return false;
     }
-    if(board::getSupplyVoltageInMillivolts() > 6000)
+    if(supply_voltage_mV > 6000)
     {   
         board::syslog("error overvolage \r\n"); 
         char buf[24];
-        util::lltoa(board::getSupplyVoltageInMillivolts(), buf);
+        util::lltoa(supply_voltage_mV, buf);
         board::syslog("supply_voltage_mV =  ");
         board::syslog(static_cast<const char*>(buf));
         board::syslog(" mV\r\n");
@@ -71,6 +72,10 @@ bool Charger::run(unsigned U_)
     while(board::getOutVoltageInVolts() < 30)
     {
         n--;
+        if(board::getOutVoltageInVolts() > U_)
+        {     
+            return true;
+        }
         if(n < 430)                             //we ran 20 ms and Uout is under 30V, report error
         { 
             board::syslog("return with error from cycle1500_5000() \r\n"); 
