@@ -60,6 +60,9 @@ constexpr unsigned MagnetCtrlPortNum = 2;
 constexpr unsigned MagnetCtrlPinMask23 = (1U << 1) | (1U << 7);
 constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
 
+constexpr unsigned DipSwitchPortNum = 1;
+constexpr unsigned DipSwitchPinMask = 0b1111;
+
 // TODO: DIP switch pins are not yet defined
 
 constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
@@ -108,12 +111,17 @@ constexpr PinMuxGroup pinmux[] =
 
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
-    // PIO2
     { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL3
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL2
 
     { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL1
     { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL4
+
+    // PIO3
+    { IOCON_PIO3_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_1
+    { IOCON_PIO3_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_2
+    { IOCON_PIO3_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_3
+    { IOCON_PIO3_3,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // DIP_4
 };
 
 namespace gpio
@@ -326,7 +334,7 @@ void setMagnetNeg()
 
 std::uint8_t readDipSwitch()
 {
-    return 0;   // TODO implement
+    return gpio::get(DipSwitchPortNum, DipSwitchPinMask) & DipSwitchPinMask;
 }
 
 bool hadButtonPressEvent()
