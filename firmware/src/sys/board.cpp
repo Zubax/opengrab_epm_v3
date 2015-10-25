@@ -42,92 +42,25 @@ constexpr unsigned AdcResolutionBits = 10;
 constexpr unsigned PwmPortNum = 2;
 constexpr unsigned PwmInputPinMask = 1U << 10;
 
-template <unsigned NumPins>
-struct PinGroup
-{
-    const std::uint8_t port;
-    const std::array<std::uint8_t, NumPins> pins;
-
-    constexpr PinGroup(std::uint8_t arg_port, const std::array<std::uint8_t, NumPins>& arg_pins) :
-        port(arg_port & 0b111),
-        pins(arg_pins)
-    { }
-
-    std::uint32_t getMask() const
-    {
-        std::uint32_t mask = 0;
-        for (auto x : pins) { mask |= 1U << x; }
-        return mask;
-    }
-
-    void set(const unsigned pin_states) const
-    {
-        std::uint32_t out_mask = 0;
-        for (unsigned i = 0; i < NumPins; i++)
-        {
-            out_mask |= (static_cast<unsigned>((pin_states & (1U << i)) != 0) << pins[i]);
-        }
-        LPC_GPIO[port].DATA[getMask()] = out_mask;
-    }
-
-    unsigned get() const
-    {
-        unsigned out = 0;
-        const auto sample = LPC_GPIO[port].DATA[getMask()];
-        for (unsigned i = 0; i < NumPins; i++)
-        {
-            if ((sample & (1U << pins[i])) != 0)
-            {
-                out |= 1U << i;
-            }
-        }
-        return out;
-    }
-
-    void makeOutputsAndSet(const unsigned pin_states) const
-    {
-        LPC_GPIO[port].DIR |= getMask();
-        set(pin_states);
-    }
-
-    void makeInputs() const
-    {
-        LPC_GPIO[port].DIR &= ~getMask();
-    }
-
-    bool areAllOutputs() const
-    {
-        const auto mask = getMask();
-        return (LPC_GPIO[port].DIR & mask) == mask;
-    }
-};
-
-struct Pin : private PinGroup<1>
-{
-    constexpr Pin(std::uint8_t arg_port, std::uint8_t arg_pin) : PinGroup<1>(arg_port, {arg_pin}) { }
-
-    void set(bool state) const { PinGroup<1>::set(state); }
-    bool get()           const { return PinGroup<1>::get() != 0; }
-
-    void makeOutputAndSet(bool state) const { PinGroup<1>::makeOutputsAndSet(state); }
-    void makeInput()                  const { PinGroup<1>::makeInputs(); }
-    bool isOutput()                   const { return PinGroup<1>::areAllOutputs(); }
-};
-
-namespace gpio
-{
 #if BOARD_OLIMEX_LPC_P11C24
-constexpr Pin CanLed(1, 11);
+constexpr unsigned CanLedPortNum = 1;
+constexpr unsigned CanLedPinMask = 1U << 11;
 #else
-constexpr Pin CanLed(2, 6);
+constexpr unsigned CanLedPortNum = 2;
+constexpr unsigned CanLedPinMask = 1U << 6;
 #endif
-constexpr Pin StatusLed(2, 0);
-constexpr PinGroup<4> PumpSwitch(1, {0, 1, 2, 4});
-constexpr PinGroup<2> MagnetCtrl23(2, {1, 7});
-constexpr PinGroup<2> MagnetCtrl14(2, {2, 8});
+
+constexpr unsigned StatusLedPortNum = 2;
+constexpr unsigned StatusLedPinMask = 1U << 0;
+
+constexpr unsigned PumpSwitchPortNum = 1;
+constexpr unsigned PumpSwitchPinMask = (1U << 0) | (1U << 1) | (1U << 2) | (1U << 4);
+
+constexpr unsigned MagnetCtrlPortNum = 2;
+constexpr unsigned MagnetCtrlPinMask23 = (1U << 1) | (1U << 7);
+constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
 
 // TODO: DIP switch pins are not yet defined
-}
 
 constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
 constexpr std::uint32_t PwmInputPeriodMaxUSec = 2500;
@@ -179,9 +112,40 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL3
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL2
 
-    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL4
     { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL1
+    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL4
 };
+
+namespace gpio
+{
+
+inline unsigned get(const unsigned port, const unsigned mask)
+{
+    return LPC_GPIO[port].DATA[mask];
+}
+
+inline void set(const unsigned port, const unsigned mask, const unsigned value)
+{
+    LPC_GPIO[port].DATA[mask] = value;
+}
+
+inline void makeOutputsAndSet(const unsigned port, const unsigned mask, const unsigned value)
+{
+    LPC_GPIO[port].DIR |= mask;
+    set(port, mask, value);
+}
+
+inline void makeInputs(const unsigned port, const unsigned mask)
+{
+    LPC_GPIO[port].DIR &= ~mask;
+}
+
+inline unsigned markOutputs(const unsigned port, const unsigned mask)
+{
+    return LPC_GPIO[port].DIR & mask;
+}
+
+}
 
 void sysctlPowerDown(unsigned long powerdownmask)
 {
@@ -250,12 +214,11 @@ void initGpio()
     // Waiting for the pull-down resistors to drive outputs to the low level - see the work-around above
     for (volatile int i = 0; i < 10000; i++) { }
 
-    gpio::CanLed.makeOutputAndSet(false);
+    gpio::makeOutputsAndSet(CanLedPortNum, CanLedPinMask, 0);
 
-    gpio::PumpSwitch.makeOutputsAndSet(0b0000);
+    gpio::makeOutputsAndSet(PumpSwitchPortNum, PumpSwitchPinMask, 0);
 
-    gpio::MagnetCtrl23.makeOutputsAndSet(0);
-    gpio::MagnetCtrl14.makeOutputsAndSet(0);
+    gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinMask23 | MagnetCtrlPinMask14, 0);
 
     // PWM input config
     LPC_GPIO[PwmPortNum].IBE |= PwmInputPinMask;
@@ -273,8 +236,8 @@ void initAdc()
     Chip_ADC_Init(LPC_ADC, &clock);
 
     Chip_ADC_SetSampleRate(LPC_ADC, &clock, SamplesPerSecond);
-    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);       //Vin
-    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);       //Vout
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);       // Vin
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);       // Vout
     Chip_ADC_SetBurstCmd(LPC_ADC, ENABLE);
 }
 
@@ -326,11 +289,11 @@ void setStatusLed(bool state)
 {
     if (state)
     {
-        gpio::StatusLed.makeOutputAndSet(state);
+        gpio::makeOutputsAndSet(StatusLedPortNum, StatusLedPinMask, state ? StatusLedPinMask : 0);
     }
     else
     {
-        gpio::StatusLed.makeInput();
+        gpio::makeInputs(StatusLedPortNum, StatusLedPinMask);
     }
 }
 
@@ -339,21 +302,26 @@ void setCanLed(bool state)
 #if BOARD_OLIMEX_LPC_P11C24
     state = !state;
 #endif
-    gpio::CanLed.set(state);
+    gpio::set(CanLedPortNum, CanLedPinMask, state ? CanLedPinMask : 0);
+}
+
+void setPumpSwitch(bool state)
+{
+    gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, state ? PumpSwitchPinMask : 0);
 }
 
 void setMagnetPos()
 {
-    gpio::MagnetCtrl23.set(0b11);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinMask23, MagnetCtrlPinMask23);
     board::delayUSec(20);
-    gpio::MagnetCtrl23.set(0b00);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinMask23, 0);
 }
 
 void setMagnetNeg()
 {
-    gpio::MagnetCtrl14.set(0b11);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinMask14, MagnetCtrlPinMask14);
     board::delayUSec(20);
-    gpio::MagnetCtrl14.set(0b00);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinMask14, 0);
 }
 
 std::uint8_t readDipSwitch()
@@ -366,7 +334,8 @@ bool hadButtonPressEvent()
     constexpr std::uint8_t PressCounterThreshold = 10;
     static std::uint8_t press_counter = 0;
 
-    if (gpio::StatusLed.get() && !gpio::StatusLed.isOutput())
+    if ((gpio::get(StatusLedPortNum, StatusLedPinMask) != 0) &&
+        (gpio::markOutputs(StatusLedPortNum, StatusLedPinMask) == 0))
     {
         press_counter = std::min(static_cast<std::uint8_t>(press_counter + 1), PressCounterThreshold);
         return false;
