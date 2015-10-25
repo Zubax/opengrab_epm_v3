@@ -152,8 +152,8 @@ constexpr PinMuxGroup pinmux[] =
 {
     // PIO1 ADC
     { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
-    
-    // PIO0 ADC 
+
+    // PIO0 ADC
     { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vout_ADC
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
@@ -166,7 +166,7 @@ constexpr PinMuxGroup pinmux[] =
 #if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
-    
+
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
     // PIO1 PUMP
@@ -176,7 +176,7 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW4
 
     // PIO2 CTRL
-    { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3 
+    { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL2
 
     { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4
@@ -394,9 +394,9 @@ unsigned getSupplyVoltageInMillivolts()
     old_value = new_value;
 
     x*=5;
-    x+=700;                             //poor mans calibration, it's within 100mV 
-    if(x < 4500)                        //under 4500mV Vref drops, mesurements useless 
-    {   
+    x+=700;                             //poor mans calibration, it's within 100mV
+    if(x < 4500)                        //under 4500mV Vref drops, mesurements useless
+    {
         x = 0;
     }
     return x;                     //Voltage divider on board, shoud not go here
@@ -414,7 +414,7 @@ unsigned getOutVoltageInVolts()
                                              AdcResolutionBits);
 
     old_value = new_value;
-    return x/10;                 //    
+    return x/10;                 //
 }
 
 #if __GNUC__
@@ -464,6 +464,41 @@ void delayMSec(unsigned msec)
 void syslog(const char* msg)
 {
     Chip_UART_SendBlocking(LPC_USART, msg, static_cast<int>(std::strlen(msg)));
+}
+
+void syslog(const char* prefix, long long integer_value, const char* suffix)
+{
+    static const auto lltoa = [](long long n, char buf[24])
+    {
+        const short sign = (n < 0) ? -1 : 1;
+        if (sign < 0)
+        {
+            n = -n;
+        }
+        unsigned pos = 0;
+        do
+        {
+            buf[pos++] = char(n % 10 + '0');
+        }
+        while ((n /= 10) > 0);
+        if (sign < 0)
+        {
+            buf[pos++] = '-';
+        }
+        buf[pos] = '\0';
+        for (unsigned i = 0, j = pos - 1U; i < j; i++, j--)
+        {
+            std::swap(buf[i], buf[j]);
+        }
+    };
+
+    syslog(prefix);
+
+    char buf[24];
+    lltoa(integer_value, buf);
+    syslog(&buf[0]);
+
+    syslog(suffix);
 }
 
 } // namespace board

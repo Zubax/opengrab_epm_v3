@@ -62,5 +62,6 @@ void delayMSec(unsigned msec);
  * Transmission in blocking.
  */
 void syslog(const char* msg);
+void syslog(const char* prefix, long long integer_value, const char* suffix = "");
 
 }
