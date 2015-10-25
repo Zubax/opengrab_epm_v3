@@ -302,6 +302,11 @@ void init()
 
 } // namespace
 
+void die()
+{
+    while (true) { }
+}
+
 #if __GNUC__
 __attribute__((optimize(0)))     // Optimization must be disabled lest it hardfaults in the IAP call
 #endif
@@ -441,6 +446,17 @@ void delayUSec(std::uint8_t usec)
         while ((started_at - (SysTick->VAL & 0xFFFFU)) < delay_ticks)
         {
             ; // Doing nothing, it's a busyloop
+        }
+    }
+}
+
+void delayMSec(unsigned msec)
+{
+    while (msec --> 0)
+    {
+        for (std::uint8_t i = 0; i < 4; i++)
+        {
+            board::delayUSec(246); // 246 * 4 = 984 usec, 16 usec calibration
         }
     }
 }
