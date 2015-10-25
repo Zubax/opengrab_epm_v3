@@ -12,6 +12,10 @@
 #include <uavcan/protocol/dynamic_node_id_client.hpp>
 #include <magnet/magnet.hpp>
 
+#if __GNUC__
+# pragma GCC optimize 1
+#endif
+
 namespace
 {
 
@@ -49,6 +53,34 @@ uavcan::NodeID performDynamicNodeIDAllocation()
     return client.getAllocatedNodeID();
 }
 
+void fillNodeInfo()
+{
+    getNode().setName("com.zubax.opengrab_epm");
+
+    {
+        uavcan::protocol::SoftwareVersion swver;
+
+        swver.major = FW_VERSION_MAJOR;
+        swver.minor = FW_VERSION_MINOR;
+        swver.vcs_commit = GIT_HASH;
+        swver.optional_field_flags = swver.OPTIONAL_FIELD_FLAG_VCS_COMMIT;
+
+        getNode().setSoftwareVersion(swver);
+    }
+
+    {
+        uavcan::protocol::HardwareVersion hwver;
+
+        hwver.major = HW_VERSION_MAJOR;
+
+        board::UniqueID uid;
+        board::readUniqueID(uid);
+        std::copy(std::begin(uid), std::end(uid), std::begin(hwver.unique_id));
+
+        getNode().setHardwareVersion(hwver);
+    }
+}
+
 #if __GNUC__
 __attribute__((noinline))
 #endif
@@ -58,16 +90,16 @@ void init()
     board::resetWatchdog();
 
     /*
+     * Configuring the clock
+     */
+    uavcan_lpc11c24::clock::init();
+
+    /*
      * Initializing the magnet before first poll() is called
      */
     magnet::init();
 
     callPollAndResetWatchdog();
-
-    /*
-     * Configuring the clock - this must be done before the CAN controller is initialized
-     */
-    uavcan_lpc11c24::clock::init();
 
     /*
      * Configuring the CAN controller
@@ -90,22 +122,9 @@ void init()
     callPollAndResetWatchdog();
 
     /*
-     * Configuring the node
+     * Starting the node
      */
-    getNode().setName("org.uavcan.lpc11c24_test");
-
-    uavcan::protocol::SoftwareVersion swver;
-    swver.major = FW_VERSION_MAJOR;
-    swver.minor = FW_VERSION_MINOR;
-    swver.vcs_commit = GIT_HASH;
-    swver.optional_field_flags = swver.OPTIONAL_FIELD_FLAG_VCS_COMMIT;
-    getNode().setSoftwareVersion(swver);
-
-    uavcan::protocol::HardwareVersion hwver;
-    board::UniqueID uid;
-    board::readUniqueID(uid);
-    std::copy(std::begin(uid), std::end(uid), std::begin(hwver.unique_id));
-    getNode().setHardwareVersion(hwver);
+    fillNodeInfo();
 
     if (getNode().start() < 0)
     {

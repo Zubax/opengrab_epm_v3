@@ -10,7 +10,9 @@ CPPSRC := $(wildcard src/*.cpp)                  \
 CSRC   := $(wildcard lpc_chip_11cxx_lib/src/*.c) \
           $(wildcard src/sys/*.c)
 
-DEF = -DFW_VERSION_MAJOR=1 -DFW_VERSION_MINOR=0
+DEF = -DFW_VERSION_MAJOR=1                       \
+      -DFW_VERSION_MINOR=0                       \
+      -DHW_VERSION_MAJOR=3
 
 INC = -Isrc                                      \
       -isystem lpc_chip_11cxx_lib/inc
@@ -55,10 +57,8 @@ DEPDIR = $(BUILDDIR)/dep
 
 DEF += -DNDEBUG -DCHIP_LPC11CXX -DCORE_M0 -DTHUMB_NO_INTERWORKING -U__STRICT_ANSI__
 
-# Removing -fconserve-stack reduces code size a little
-FLAGS = -mthumb -mcpu=cortex-m0 -mno-thumb-interwork -flto -Os -Wall -Werror -Wextra -Wundef -ffunction-sections \
+FLAGS = -mthumb -mcpu=cortex-m0 -mno-thumb-interwork -flto -Os -g3 -Wall -Wextra -Werror -Wundef -ffunction-sections \
         -fdata-sections -fno-common -fno-exceptions -fno-unwind-tables -fno-stack-protector -fomit-frame-pointer \
-        -ftracer -ftree-loop-distribute-patterns -frename-registers -freorder-blocks -fconserve-stack \
         -Wfloat-equal -Wconversion -Wsign-conversion -Wmissing-declarations
 
 C_CPP_FLAGS = $(FLAGS) -MD -MP -MF $(DEPDIR)/$(@F).d

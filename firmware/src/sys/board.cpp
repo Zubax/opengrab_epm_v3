@@ -150,17 +150,23 @@ struct PinMuxGroup
  */
 constexpr PinMuxGroup pinmux[] =
 {
-    // PIO1 ADC
-    { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
-
-    // PIO0 ADC
+    // PIO0
     { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vout_ADC
+
+    // PIO1
+    { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO1_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // LED2
     { IOCON_PIO1_11, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // CAN LED
 #endif
+
+    { IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW0
+    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW1
+    { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW2
+    { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW4
+
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // Status LED
 #if !BOARD_OLIMEX_LPC_P11C24
@@ -169,19 +175,12 @@ constexpr PinMuxGroup pinmux[] =
 
     { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
-    // PIO1 PUMP
-    { IOCON_PIO1_0,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW0
-    { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW1
-    { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW2
-    { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     //PUMP SW4
+    // PIO2
+    { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL3
+    { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL2
 
-    // PIO2 CTRL
-    { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL3
-    { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL2
-
-    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL4
-    { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     //CTRL1
-
+    { IOCON_PIO2_8,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL4
+    { IOCON_PIO2_2,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL1
 };
 
 void sysctlPowerDown(unsigned long powerdownmask)
@@ -262,7 +261,7 @@ void initGpio()
     LPC_GPIO[PwmPortNum].IBE |= PwmInputPinMask;
     LPC_GPIO[PwmPortNum].IE  |= PwmInputPinMask;
 
-    NVIC_EnableIRQ(EINT2_IRQn);
+    //NVIC_EnableIRQ(EINT2_IRQn);
     NVIC_SetPriority(EINT2_IRQn, 0);    // Highest
 }
 
@@ -389,17 +388,17 @@ unsigned getSupplyVoltageInMillivolts()
 
     // Division and multiplication by 2 are reduced
     unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
-                                             AdcResolutionBits);
+                                       AdcResolutionBits);
 
     old_value = new_value;
 
-    x*=5;
-    x+=700;                             //poor mans calibration, it's within 100mV
-    if(x < 4500)                        //under 4500mV Vref drops, mesurements useless
+    x *= 5;
+    x += 700;                           // Poor man's calibration, it's within 100mV - TODO WTF is this?
+    if (x < 4500)                       // Under 4500mV Vref drops, mesurements useless
     {
         x = 0;
     }
-    return x;                     //Voltage divider on board, shoud not go here
+    return x;                           // Voltage divider on board, shoud not go here
 }
 
 unsigned getOutVoltageInVolts()
@@ -410,11 +409,12 @@ unsigned getOutVoltageInVolts()
     (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &new_value);
 
     // Division and multiplication by 2 are reduced
-    const unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
-                                             AdcResolutionBits);
+    const unsigned x =
+        static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
+                              AdcResolutionBits);
 
     old_value = new_value;
-    return x/10;                 //
+    return x / 10;
 }
 
 #if __GNUC__
