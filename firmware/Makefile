@@ -5,14 +5,14 @@
 #
 
 CPPSRC := $(wildcard src/*.cpp)                  \
-          $(wildcard src/sys/*.cpp)
+          $(wildcard src/*/*.cpp)
 
 CSRC   := $(wildcard lpc_chip_11cxx_lib/src/*.c) \
           $(wildcard src/sys/*.c)
 
 DEF = -DFW_VERSION_MAJOR=1 -DFW_VERSION_MINOR=0
 
-INC = -Isrc/sys                         \
+INC = -Isrc                                      \
       -isystem lpc_chip_11cxx_lib/inc
 
 ifdef BOARD_OLIMEX_LPC_P11C24
@@ -60,8 +60,6 @@ FLAGS = -mthumb -mcpu=cortex-m0 -mno-thumb-interwork -flto -Os -Wall -Werror -We
         -fdata-sections -fno-common -fno-exceptions -fno-unwind-tables -fno-stack-protector -fomit-frame-pointer \
         -ftracer -ftree-loop-distribute-patterns -frename-registers -freorder-blocks -fconserve-stack \
         -Wfloat-equal -Wconversion -Wsign-conversion -Wmissing-declarations
-    
-        
 
 C_CPP_FLAGS = $(FLAGS) -MD -MP -MF $(DEPDIR)/$(@F).d
 

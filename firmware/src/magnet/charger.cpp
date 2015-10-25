@@ -5,9 +5,9 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
-#include <chip.h>
 #include "charger.hpp"
-#include "board.hpp"
+#include <sys/board.hpp>
+#include <chip.h>
 
 namespace charger
 {

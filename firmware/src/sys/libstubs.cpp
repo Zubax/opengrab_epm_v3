@@ -86,6 +86,18 @@ void __cxa_pure_virtual()
 
 }
 
+/**
+ * This function re-defines the standard ::rand(), which is used by the class uavcan::DynamicNodeIDClient.
+ * Redefinition is normally not needed, but GCC 4.9 tends to generate broken binaries if it is not redefined.
+ */
+extern "C"
+int rand()
+{
+    static int x = 1;
+    x = x * 48271 % 2147483647;
+    return x;
+}
+
 /*
  * stdio
  */

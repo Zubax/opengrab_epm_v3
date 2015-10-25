@@ -6,6 +6,7 @@
  */
 
 #include <cstdint>
+#include <array>
 
 namespace board
 {
@@ -15,9 +16,8 @@ __attribute__((noreturn))
 #endif
 void die();
 
-constexpr unsigned UniqueIDSize = 16;
-
-void readUniqueID(std::uint8_t out_uid[UniqueIDSize]);
+typedef std::array<std::uint8_t, 16> UniqueID;
+void readUniqueID(UniqueID& out_uid);
 
 void resetWatchdog();
 
