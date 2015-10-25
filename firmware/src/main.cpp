@@ -93,6 +93,59 @@ void fillNodeInfo()
     }
 }
 
+void configureAcceptanceFilters()
+{
+    // These masks are specific for UAVCAN - we're using only extended data frames and nothing else.
+    static constexpr auto CommonIDBits   = uavcan::CanFrame::FlagEFF;
+    static constexpr auto CommonMaskBits = uavcan::CanFrame::FlagEFF |
+                                           uavcan::CanFrame::FlagRTR |
+                                           uavcan::CanFrame::FlagERR;
+
+    static constexpr auto NodeIDShift     = 8;
+    static constexpr auto MessageMaskBits = 0xFFFF80U;
+    static constexpr auto ServiceIDBits   = 0x80U;
+    static constexpr auto ServiceMaskBits = 0x7F80U;
+
+    // Allocating a buffer large enough to fit all filters the application may need.
+    static constexpr unsigned MaxFilterConfigs = 32;
+    uavcan::CanFilterConfig filter_configs[MaxFilterConfigs];
+    std::uint16_t filter_config_index = 0;
+
+    // Building message filters.
+    auto p = getNode().getDispatcher().getListOfMessageListeners().get();
+    while (p != NULL)
+    {
+        filter_configs[filter_config_index].id =
+            (static_cast<unsigned>(p->getDataTypeDescriptor().getID().get()) << NodeIDShift) | CommonIDBits;
+
+        filter_configs[filter_config_index].mask = MessageMaskBits | CommonMaskBits;
+
+        p = p->getNextListNode();
+
+        filter_config_index++;
+        if (filter_config_index >= std::min<unsigned>(MaxFilterConfigs,
+                                                      uavcan_lpc11c24::CanDriver::instance().getNumFilters()))
+        {
+            board::die(); // Filter compaction algorithm defined in libuavcan is not used because of memory constraints
+        }
+    }
+
+    // Adding one filter for unicast transfers - note that it's filtering on our Node ID.
+    filter_configs[filter_config_index].id =
+        ServiceIDBits | (static_cast<unsigned>(getNode().getNodeID().get()) << NodeIDShift) | CommonIDBits;
+    filter_configs[filter_config_index].mask = ServiceMaskBits | CommonMaskBits;
+
+    filter_config_index++;
+
+    // Sending the configuration to the CAN driver.
+    if (uavcan_lpc11c24::CanDriver::instance().configureFilters(filter_configs, filter_config_index) < 0)
+    {
+        board::die();
+    }
+
+    board::syslog("Installed ", filter_config_index, " HW filters\r\n");
+}
+
 void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
 {
     if (msg.hardpoint_id != getHardpointID())
@@ -215,6 +268,11 @@ void init()
     {
         board::die();
     }
+
+    /*
+     * Configuring the filters in the last order, when all subscribers are initialized.
+     */
+    configureAcceptanceFilters();
 }
 
 }
