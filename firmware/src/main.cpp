@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <sys/board.hpp>
 #include <uavcan_lpc11c24/uavcan_lpc11c24.hpp>
+#include <uavcan/equipment/hardpoint/Command.hpp>
+#include <uavcan/equipment/hardpoint/Status.hpp>
 #include <uavcan/protocol/dynamic_node_id_client.hpp>
 #include <magnet/magnet.hpp>
 
@@ -26,6 +28,16 @@ uavcan::Node<NodeMemoryPoolSize>& getNode()
     static uavcan::Node<NodeMemoryPoolSize> node(uavcan_lpc11c24::CanDriver::instance(),
                                                  uavcan_lpc11c24::SystemClock::instance());
     return node;
+}
+
+std::uint8_t getHardpointID()
+{
+    static int cached = -1;
+    if (cached < 0)
+    {
+        cached = board::readDipSwitch();
+    }
+    return std::uint8_t(cached);
 }
 
 void callPollAndResetWatchdog()
@@ -79,6 +91,46 @@ void fillNodeInfo()
 
         getNode().setHardwareVersion(hwver);
     }
+}
+
+void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
+{
+    if (msg.hardpoint_id != getHardpointID())
+    {
+        return;
+    }
+
+    board::syslog("Cmd ", msg.command, "\r\n");
+
+    // XXX TODO handle
+}
+
+void publishHardpointStatus()
+{
+    static const auto Priority = uavcan::TransferPriority::MiddleLower;
+
+    static uavcan::Publisher<uavcan::equipment::hardpoint::Status> pub(getNode());
+
+    static bool initialized = false;
+    if (!initialized)
+    {
+        initialized = true;
+        pub.setPriority(Priority);
+    }
+
+    uavcan::equipment::hardpoint::Status msg;
+
+    msg.hardpoint_id = getHardpointID();
+    msg.status = 0;                                             // XXX TODO
+
+    (void)pub.broadcast(msg);
+}
+
+void updateUavcanStatus(const uavcan::TimerEvent&)
+{
+    publishHardpointStatus();
+
+    // TODO: node health update
 }
 
 #if __GNUC__
@@ -151,8 +203,18 @@ void init()
 
     /*
      * Initializing other libuavcan-related objects
+     * Why reinterpret_cast<>() on function pointers? Try to remove it, or replace with static_cast. GCC is fun.   D:
      */
-    // TODO
+    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> update_timer(getNode());
+    update_timer.setCallback(reinterpret_cast<decltype(update_timer)::Callback>(&updateUavcanStatus));
+    update_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(500));
+
+    static uavcan::Subscriber<uavcan::equipment::hardpoint::Command,
+                              void (*)(const uavcan::equipment::hardpoint::Command&)> command_sub(getNode());
+    if (command_sub.start(reinterpret_cast<decltype(command_sub)::Callback>(&handleHardpointCommand)) < 0)
+    {
+        board::die();
+    }
 }
 
 }
