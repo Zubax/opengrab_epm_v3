@@ -369,9 +369,9 @@ unsigned getSupplyVoltageInMillivolts()
 
     old_value = new_value;
 
-    x *= 5;
-    x += 700;                           // Poor man's calibration, it's within 100mV - TODO WTF is this?
-    if (x < 4500)                       // Under 4500mV Vref drops, mesurements useless
+    x *= 5;                             //should be x*=5.5 
+    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV - 
+    if (x < 4500)                       //Under 4500mV Vref drops, mesurements useless
     {
         x = 0;
     }
