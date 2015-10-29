@@ -44,7 +44,12 @@ unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();
 
-unsigned getPwmInputPeriodInMicroseconds();
+/**
+ * Returns pulse length of the input PWM in microseconds if the signal is present and valid.
+ * If PWM signal is not present, or if the pulse length not within the range [500, 2500] microseconds,
+ * the function will return zero.
+ */
+unsigned getPwmInputPulseLengthInMicroseconds();
 
 /**
  * Delays execution in a busyloop for the specified amount of microseconds.

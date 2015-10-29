@@ -63,12 +63,10 @@ constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
 constexpr unsigned DipSwitchPortNum = 1;
 constexpr unsigned DipSwitchPinMask = 0b1111;
 
-// TODO: DIP switch pins are not yet defined
-
 constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
 constexpr std::uint32_t PwmInputPeriodMaxUSec = 2500;
 constexpr std::uint32_t PwmInputTimeoutUSec   = 100000;
-static std::uint32_t pwm_input_period_usec;
+static std::uint32_t pwm_input_pulse_usec;
 static uavcan::MonotonicTime last_pwm_input_update_ts;
 
 struct PinMuxGroup
@@ -415,13 +413,13 @@ unsigned getOutVoltageInVolts()
 #if __GNUC__
 __attribute__((optimize(1)))    // Fails
 #endif
-unsigned getPwmInputPeriodInMicroseconds()
+unsigned getPwmInputPulseLengthInMicroseconds()
 {
     if ((uavcan_lpc11c24::clock::getMonotonic() - last_pwm_input_update_ts).toUSec() > PwmInputTimeoutUSec)
     {
-        pwm_input_period_usec = 0;
+        pwm_input_pulse_usec = 0;
     }
-    return pwm_input_period_usec;
+    return pwm_input_pulse_usec;
 }
 
 void delayUSec(std::uint8_t usec)
@@ -523,18 +521,18 @@ void PIOINT2_IRQHandler()
 
             if (diff_usec >= PwmInputPeriodMinUSec && diff_usec <= PwmInputPeriodMaxUSec)
             {
-                if (pwm_input_period_usec == 0)
+                if (pwm_input_pulse_usec == 0)
                 {
-                    pwm_input_period_usec = static_cast<std::uint32_t>(diff_usec);
+                    pwm_input_pulse_usec = static_cast<std::uint32_t>(diff_usec);
                 }
                 else
                 {
-                    pwm_input_period_usec = static_cast<std::uint32_t>((pwm_input_period_usec + diff_usec) / 2);
+                    pwm_input_pulse_usec = static_cast<std::uint32_t>((pwm_input_pulse_usec + diff_usec) / 2);
                 }
             }
             else
             {
-                pwm_input_period_usec = 0;      // Invalid value
+                pwm_input_pulse_usec = 0;      // Invalid value
             }
         }
     }
