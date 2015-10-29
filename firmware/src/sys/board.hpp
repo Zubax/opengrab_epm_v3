@@ -19,6 +19,9 @@ void die();
 typedef std::array<std::uint8_t, 16> UniqueID;
 void readUniqueID(UniqueID& out_uid);
 
+typedef std::array<std::uint8_t, 128> DeviceSignature;
+bool tryReadDeviceSignature(DeviceSignature& out_signature);
+
 void resetWatchdog();
 
 void setStatusLed(bool state);

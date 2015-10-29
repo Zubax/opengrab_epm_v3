@@ -288,6 +288,24 @@ void readUniqueID(UniqueID& out_uid)
     std::memcpy(out_uid.data(), aligned_array, 16);
 }
 
+bool tryReadDeviceSignature(DeviceSignature& out_signature)
+{
+    static const unsigned SignatureAddress = 32768 - std::tuple_size<DeviceSignature>::value; // End of flash
+
+    std::memcpy(out_signature.data(),
+                reinterpret_cast<void*>(SignatureAddress),
+                std::tuple_size<DeviceSignature>::value);
+
+    for (auto x : out_signature)
+    {
+        if (x != 0xFF)
+        {
+            return true;
+        }
+    }
+    return false;       // All bytes contain 0xFF, means that the memory is empty
+}
+
 void resetWatchdog()
 {
     Chip_WWDT_Feed(LPC_WWDT);
@@ -369,8 +387,8 @@ unsigned getSupplyVoltageInMillivolts()
 
     old_value = new_value;
 
-    x *= 5;                             //should be x*=5.5 
-    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV - 
+    x *= 5;                             //should be x*=5.5
+    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV -
     if (x < 4500)                       //Under 4500mV Vref drops, mesurements useless
     {
         x = 0;

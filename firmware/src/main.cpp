@@ -85,9 +85,19 @@ void fillNodeInfo()
 
         hwver.major = HW_VERSION_MAJOR;
 
-        board::UniqueID uid;
-        board::readUniqueID(uid);
-        std::copy(std::begin(uid), std::end(uid), std::begin(hwver.unique_id));
+        {
+            board::UniqueID uid;
+            board::readUniqueID(uid);
+            std::copy(std::begin(uid), std::end(uid), std::begin(hwver.unique_id));
+        }
+
+        {
+            board::DeviceSignature coa;
+            if (board::tryReadDeviceSignature(coa))
+            {
+                std::copy(std::begin(coa), std::end(coa), std::back_inserter(hwver.certificate_of_authenticity));
+            }
+        }
 
         getNode().setHardwareVersion(hwver);
     }
