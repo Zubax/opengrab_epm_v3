@@ -503,7 +503,15 @@ void TIMER16_1_IRQHandler()
             if ((LPC_TIMER16_1->CR[0] >= PwmInputPeriodMinUSec) &&
                 (LPC_TIMER16_1->CR[0] <= PwmInputPeriodMaxUSec))
             {
-                pwm_input_pulse_usec = static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0]);
+                if (pwm_input_pulse_usec > 0)
+                {
+                    pwm_input_pulse_usec =
+                        static_cast<std::uint16_t>((LPC_TIMER16_1->CR[0] + pwm_input_pulse_usec) / 2U);
+                }
+                else
+                {
+                    pwm_input_pulse_usec = static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0]);
+                }
             }
             else
             {
