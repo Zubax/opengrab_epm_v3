@@ -15,7 +15,6 @@
 #include <cstdint>
 #include <algorithm>
 #include <array>
-#include <uavcan_lpc11c24/clock.hpp>
 
 #ifndef BOARD_OLIMEX_LPC_P11C24
 #define BOARD_OLIMEX_LPC_P11C24 0
@@ -39,9 +38,6 @@ constexpr std::uint32_t TargetSystemCoreClock = 48000000;
 constexpr unsigned AdcReferenceMillivolts = 3300;
 constexpr unsigned AdcResolutionBits = 10;
 
-constexpr unsigned PwmPortNum = 2;
-constexpr unsigned PwmInputPinMask = 1U << 10;
-
 #if BOARD_OLIMEX_LPC_P11C24
 constexpr unsigned CanLedPortNum = 1;
 constexpr unsigned CanLedPinMask = 1U << 11;
@@ -63,13 +59,9 @@ constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
 constexpr unsigned DipSwitchPortNum = 1;
 constexpr unsigned DipSwitchPinMask = 0b1111;
 
-// TODO: DIP switch pins are not yet defined
-
-constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
-constexpr std::uint32_t PwmInputPeriodMaxUSec = 2500;
-constexpr std::uint32_t PwmInputTimeoutUSec   = 100000;
-static std::uint32_t pwm_input_period_usec;
-static uavcan::MonotonicTime last_pwm_input_update_ts;
+constexpr std::uint16_t PwmInputPeriodMinUSec = 500;
+constexpr std::uint16_t PwmInputPeriodMaxUSec = 2500;
+static std::uint16_t pwm_input_pulse_usec;
 
 struct PinMuxGroup
 {
@@ -103,13 +95,13 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW2
     { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW4
 
+    { IOCON_PIO1_8,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
+
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // Status LED
 #if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
-
-    { IOCON_PIO2_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
     { IOCON_PIO2_1,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL3
     { IOCON_PIO2_7,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN | IOCON_DIGMODE_EN },     // CTRL2
@@ -227,13 +219,6 @@ void initGpio()
     gpio::makeOutputsAndSet(PumpSwitchPortNum, PumpSwitchPinMask, 0);
 
     gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinMask23 | MagnetCtrlPinMask14, 0);
-
-    // PWM input config
-    LPC_GPIO[PwmPortNum].IBE |= PwmInputPinMask;
-    LPC_GPIO[PwmPortNum].IE  |= PwmInputPinMask;
-
-    //NVIC_EnableIRQ(EINT2_IRQn);
-    NVIC_SetPriority(EINT2_IRQn, 0);    // Highest
 }
 
 void initAdc()
@@ -256,6 +241,22 @@ void initUart()
     Chip_UART_TXEnable(LPC_USART);
 }
 
+void initPwmCapture()
+{
+    Chip_TIMER_Init(LPC_TIMER16_1);
+    // 1 usec per tick
+    Chip_TIMER_PrescaleSet(LPC_TIMER16_1, (TargetSystemCoreClock / 1000000U) - 1U);
+    // Hardware PWM capture (edges will be initialized in the IRQ handler)
+    Chip_TIMER_CaptureEnableInt(LPC_TIMER16_1, 0);
+    // PWM timeout detection
+    Chip_TIMER_MatchEnableInt(LPC_TIMER16_1, 0);
+    // Start
+    Chip_TIMER_Enable(LPC_TIMER16_1);
+    // Enabling the IRQ
+    NVIC_EnableIRQ(TIMER_16_1_IRQn);
+    NVIC_SetPriority(TIMER_16_1_IRQn, 1);
+}
+
 void init()
 {
     Chip_SYSCTL_SetBODLevels(SYSCTL_BODRSTLVL_2_06V, SYSCTL_BODINTVAL_RESERVED1);
@@ -266,6 +267,7 @@ void init()
     initGpio();
     initAdc();
     initUart();
+    initPwmCapture();
 
     resetWatchdog();
 }
@@ -369,8 +371,8 @@ unsigned getSupplyVoltageInMillivolts()
 
     old_value = new_value;
 
-    x *= 5;                             //should be x*=5.5 
-    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV - 
+    x *= 5;                             //should be x*=5.5
+    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV -
     if (x < 4500)                       //Under 4500mV Vref drops, mesurements useless
     {
         x = 0;
@@ -394,16 +396,9 @@ unsigned getOutVoltageInVolts()
     return x / 10;
 }
 
-#if __GNUC__
-__attribute__((optimize(1)))    // Fails
-#endif
-unsigned getPwmInputPeriodInMicroseconds()
+unsigned getPwmInputPulseLengthInMicroseconds()
 {
-    if ((uavcan_lpc11c24::clock::getMonotonic() - last_pwm_input_update_ts).toUSec() > PwmInputTimeoutUSec)
-    {
-        pwm_input_period_usec = 0;
-    }
-    return pwm_input_period_usec;
+    return pwm_input_pulse_usec;
 }
 
 void delayUSec(std::uint8_t usec)
@@ -483,42 +478,73 @@ void syslog(const char* prefix, long long integer_value, const char* suffix)
 extern "C"
 {
 
-void PIOINT2_IRQHandler();
-void PIOINT2_IRQHandler()
+void TIMER16_1_IRQHandler();
+void TIMER16_1_IRQHandler()
 {
     using namespace board;
 
-    if ((LPC_GPIO[PwmPortNum].MIS & PwmInputPinMask) != 0)
+    static std::int32_t rising_edge_timestamp = -1;
+
+    static constexpr unsigned CCR_RISING_EDGE  = 0b101;
+    static constexpr unsigned CCR_FALLING_EDGE = 0b110;
+
+    /*
+     * PWM edge capture interrupt
+     */
+    if (Chip_TIMER_CapturePending(LPC_TIMER16_1, 0))
     {
-        LPC_GPIO[PwmPortNum].IC = PwmInputPinMask;
+        // Clearing the flag
+        Chip_TIMER_ClearCapture(LPC_TIMER16_1, 0);
 
-        static uavcan::MonotonicTime prev_ts;
-        const auto ts = uavcan_lpc11c24::clock::getMonotonic();         // TODO: Is it safe to call it from here?
-        const auto diff_usec = static_cast<std::uint64_t>((ts - prev_ts).toUSec());
-        prev_ts = ts;
-
-        const bool input_state = (LPC_GPIO[PwmPortNum].DATA[PwmInputPinMask] & PwmInputPinMask) != 0;
-
-        if (!input_state)       // Updating only on trailing edge
+        // Swapping polarity and processing the event
+        if (rising_edge_timestamp < 0)
         {
-            last_pwm_input_update_ts = ts;
+            LPC_TIMER16_1->CCR = CCR_FALLING_EDGE;
+            rising_edge_timestamp = static_cast<std::int32_t>(LPC_TIMER16_1->CR[0]);
+        }
+        else
+        {
+            LPC_TIMER16_1->CCR = CCR_RISING_EDGE;
 
-            if (diff_usec >= PwmInputPeriodMinUSec && diff_usec <= PwmInputPeriodMaxUSec)
+            const std::uint16_t duration =
+                static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0] - static_cast<std::uint16_t>(rising_edge_timestamp));
+
+            if ((duration >= PwmInputPeriodMinUSec) && (duration <= PwmInputPeriodMaxUSec))
             {
-                if (pwm_input_period_usec == 0)
+                if (pwm_input_pulse_usec > 0)
                 {
-                    pwm_input_period_usec = static_cast<std::uint32_t>(diff_usec);
+                    pwm_input_pulse_usec =
+                        static_cast<std::uint16_t>((duration + pwm_input_pulse_usec) / 2);
                 }
                 else
                 {
-                    pwm_input_period_usec = static_cast<std::uint32_t>((pwm_input_period_usec + diff_usec) / 2);
+                    pwm_input_pulse_usec = duration;
                 }
             }
             else
             {
-                pwm_input_period_usec = 0;      // Invalid value
+                pwm_input_pulse_usec = 0;
             }
+
+            rising_edge_timestamp = -1;
         }
+
+        // Resetting the timeout interrupt
+        LPC_TIMER16_1->MR[0] = LPC_TIMER16_1->CR[0] + 0xFFFFU;   // 65.535 ms timeout (~15 Hz)
+        Chip_TIMER_ClearMatch(LPC_TIMER16_1, 0);
+    }
+
+    /*
+     * PWM edge timeout interrupt (will be invoked periodically as long as the PWM signal is not present)
+     */
+    if (Chip_TIMER_MatchPending(LPC_TIMER16_1, 0))
+    {
+        Chip_TIMER_ClearMatch(LPC_TIMER16_1, 0);
+
+        LPC_TIMER16_1->CCR = CCR_RISING_EDGE;
+
+        rising_edge_timestamp = -1;
+        pwm_input_pulse_usec = 0;
     }
 }
 
