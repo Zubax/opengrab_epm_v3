@@ -49,7 +49,7 @@ bool Charger::run(unsigned U_)
         return false;
     }
    
-    unsigned n=450;                             //max run time in ruffly ms
+    unsigned n=22500;                             //max run time in ruffly ms
 
     cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is small
 
@@ -60,7 +60,7 @@ bool Charger::run(unsigned U_)
         {
             return true;
         }
-        if(n < 430)                             //we ran 20 ms and Uout is under 30V, report error
+        if(n < 21500)                             //we ran 20 ms and Uout is under 30V, report error
         {
             board::syslog("return with error from cycle1500_5000() \r\n");
             return false;
@@ -81,7 +81,7 @@ bool Charger::run(unsigned U_)
             return true;
         }
 
-        if(n < 380)                             //we ran 70 ms and Uout is under 60V, report error
+        if(n < 19000)                             //we ran 70 ms and Uout is under 60V, report error
         {
             board::syslog("return with error from cycle1500_3000() \r\n");
             return false;
@@ -98,7 +98,7 @@ bool Charger::run(unsigned U_)
             return true;
         }
 
-        if(n < 300)                             //we ran 150 ms and Uout is under 150V, report error
+        if(n < 15000)                             //we ran 150 ms and Uout is under 150V, report error
         {
             board::syslog("return with error from cycle1500_1500(); \r\n");
             return false;
@@ -146,7 +146,7 @@ void Charger::cycle1000_7000()
 void Charger::cycle1500_5000()
 {
     __disable_irq();
-    for (unsigned i = 0; i < 150; i++)         // this takes ~1ms
+    for (unsigned i = 0; i < 3; i++)         // this takes ~50us
     {
 
         LPC_GPIO[1].DATA[0b010111] = 0b010111; // 1 ON
@@ -191,7 +191,7 @@ void Charger::cycle1500_5000()
 void Charger::cycle1500_3000()
 {
     __disable_irq();
-    for (unsigned i = 0; i < 220; i++)         // this takes ~1ms
+    for (unsigned i = 0; i < 5; i++)         // this takes ~50us
     {
 
         LPC_GPIO[1].DATA[0b010111] = 0b010111; // 1 ON
@@ -235,7 +235,7 @@ void Charger::cycle1500_3000()
 void Charger::cycle1500_1500()
 {
     __disable_irq();
-    for (unsigned i = 0; i < 330; i++)         // this takes ~1ms
+    for (unsigned i = 0; i < 7; i++)         // this takes ~50us
     {
 
         LPC_GPIO[1].DATA[0b010111] = 0b010111; // 1 ON
@@ -309,7 +309,7 @@ void Charger::cycle1500_1500()
 void Charger::cycle2000_500()
 {
     __disable_irq();
-    for (unsigned i = 0; i < 400; i++)         // this takes ~1ms
+    for (unsigned i = 0; i < 8; i++)         // this takes ~50us
     {
 
         LPC_GPIO[1].DATA[0b010111] = 0b010111; // 1 ON
