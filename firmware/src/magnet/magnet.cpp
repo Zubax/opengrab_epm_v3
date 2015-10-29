@@ -200,7 +200,7 @@ void poll()
 {
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
 
-    const auto pwm_input = board::getPwmInputPeriodInMicroseconds();
+    const auto pwm_input = board::getPwmInputPulseLengthInMicroseconds();
 
     if (board::hadButtonPressEvent())
     {

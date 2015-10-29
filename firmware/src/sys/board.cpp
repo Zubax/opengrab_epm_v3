@@ -61,7 +61,7 @@ constexpr unsigned DipSwitchPinMask = 0b1111;
 
 constexpr std::uint16_t PwmInputPeriodMinUSec = 500;
 constexpr std::uint16_t PwmInputPeriodMaxUSec = 2500;
-static std::uint16_t pwm_input_period_usec;
+static std::uint16_t pwm_input_pulse_usec;
 
 struct PinMuxGroup
 {
@@ -80,8 +80,6 @@ constexpr PinMuxGroup pinmux[] =
 {
     // PIO0
     { IOCON_PIO0_11, IOCON_FUNC2 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vout_ADC
-
-    //{ IOCON_PIO0_2,  IOCON_FUNC2 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // PWM
 
     // PIO1
     { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
@@ -399,9 +397,9 @@ unsigned getOutVoltageInVolts()
     return x / 10;
 }
 
-unsigned getPwmInputPeriodInMicroseconds()
+unsigned getPwmInputPulseLengthInMicroseconds()
 {
-    return pwm_input_period_usec;
+    return pwm_input_pulse_usec;
 }
 
 void delayUSec(std::uint8_t usec)
@@ -505,11 +503,11 @@ void TIMER16_1_IRQHandler()
             if ((LPC_TIMER16_1->CR[0] >= PwmInputPeriodMinUSec) &&
                 (LPC_TIMER16_1->CR[0] <= PwmInputPeriodMaxUSec))
             {
-                pwm_input_period_usec = static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0]);
+                pwm_input_pulse_usec = static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0]);
             }
             else
             {
-                pwm_input_period_usec = 0;
+                pwm_input_pulse_usec = 0;
             }
 
             rising_edge = true;
@@ -529,7 +527,7 @@ void TIMER16_1_IRQHandler()
         Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER16_1, 0);
 
         rising_edge = true;
-        pwm_input_period_usec = 0;
+        pwm_input_pulse_usec = 0;
     }
 }
 
