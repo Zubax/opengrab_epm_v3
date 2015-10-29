@@ -14,10 +14,6 @@
 #include <uavcan/protocol/dynamic_node_id_client.hpp>
 #include <magnet/magnet.hpp>
 
-#if __GNUC__
-# pragma GCC optimize 1
-#endif
-
 namespace
 {
 
