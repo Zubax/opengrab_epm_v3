@@ -249,13 +249,12 @@ void initPwmCapture()
     // Hardware PWM capture (edges will be initialized in the IRQ handler)
     Chip_TIMER_CaptureEnableInt(LPC_TIMER16_1, 0);
     // PWM timeout detection
-    Chip_TIMER_SetMatch(LPC_TIMER16_1, 0, 0xFFFF);      // 65.535 ms timeout (~15 Hz)
     Chip_TIMER_MatchEnableInt(LPC_TIMER16_1, 0);
     // Start
     Chip_TIMER_Enable(LPC_TIMER16_1);
     // Enabling the IRQ
     NVIC_EnableIRQ(TIMER_16_1_IRQn);
-    NVIC_SetPriority(TIMER_16_1_IRQn, 0);               // Highest priority
+    NVIC_SetPriority(TIMER_16_1_IRQn, 1);
 }
 
 void init()
@@ -484,33 +483,42 @@ void TIMER16_1_IRQHandler()
 {
     using namespace board;
 
-    static bool rising_edge = true;
+    static std::int32_t rising_edge_timestamp = -1;
 
+    static constexpr unsigned CCR_RISING_EDGE  = 0b101;
+    static constexpr unsigned CCR_FALLING_EDGE = 0b110;
+
+    /*
+     * PWM edge capture interrupt
+     */
     if (Chip_TIMER_CapturePending(LPC_TIMER16_1, 0))
     {
-        if (rising_edge)
-        {
-            Chip_TIMER_CaptureRisingEdgeDisable(LPC_TIMER16_1, 0);
-            Chip_TIMER_CaptureFallingEdgeEnable(LPC_TIMER16_1, 0);
+        // Clearing the flag
+        Chip_TIMER_ClearCapture(LPC_TIMER16_1, 0);
 
-            rising_edge = false;
+        // Swapping polarity and processing the event
+        if (rising_edge_timestamp < 0)
+        {
+            LPC_TIMER16_1->CCR = CCR_FALLING_EDGE;
+            rising_edge_timestamp = static_cast<std::int32_t>(LPC_TIMER16_1->CR[0]);
         }
         else
         {
-            Chip_TIMER_CaptureFallingEdgeDisable(LPC_TIMER16_1, 0);
-            Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER16_1, 0);
+            LPC_TIMER16_1->CCR = CCR_RISING_EDGE;
 
-            if ((LPC_TIMER16_1->CR[0] >= PwmInputPeriodMinUSec) &&
-                (LPC_TIMER16_1->CR[0] <= PwmInputPeriodMaxUSec))
+            const std::uint16_t duration =
+                static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0] - static_cast<std::uint16_t>(rising_edge_timestamp));
+
+            if ((duration >= PwmInputPeriodMinUSec) && (duration <= PwmInputPeriodMaxUSec))
             {
                 if (pwm_input_pulse_usec > 0)
                 {
                     pwm_input_pulse_usec =
-                        static_cast<std::uint16_t>((LPC_TIMER16_1->CR[0] + pwm_input_pulse_usec) / 2U);
+                        static_cast<std::uint16_t>((duration + pwm_input_pulse_usec) / 2);
                 }
                 else
                 {
-                    pwm_input_pulse_usec = static_cast<std::uint16_t>(LPC_TIMER16_1->CR[0]);
+                    pwm_input_pulse_usec = duration;
                 }
             }
             else
@@ -518,23 +526,24 @@ void TIMER16_1_IRQHandler()
                 pwm_input_pulse_usec = 0;
             }
 
-            rising_edge = true;
+            rising_edge_timestamp = -1;
         }
 
-        Chip_TIMER_ClearCapture(LPC_TIMER16_1, 0);
-
-        // this IRQ has the highest priority, so the following operation is quasi atomic
-        LPC_TIMER16_1->TC = LPC_TIMER16_1->TC - LPC_TIMER16_1->CR[0];
+        // Resetting the timeout interrupt
+        LPC_TIMER16_1->MR[0] = LPC_TIMER16_1->CR[0] + 0xFFFFU;   // 65.535 ms timeout (~15 Hz)
+        Chip_TIMER_ClearMatch(LPC_TIMER16_1, 0);
     }
 
+    /*
+     * PWM edge timeout interrupt (will be invoked periodically as long as the PWM signal is not present)
+     */
     if (Chip_TIMER_MatchPending(LPC_TIMER16_1, 0))
     {
         Chip_TIMER_ClearMatch(LPC_TIMER16_1, 0);
 
-        Chip_TIMER_CaptureFallingEdgeDisable(LPC_TIMER16_1, 0);
-        Chip_TIMER_CaptureRisingEdgeEnable(LPC_TIMER16_1, 0);
+        LPC_TIMER16_1->CCR = CCR_RISING_EDGE;
 
-        rising_edge = true;
+        rising_edge_timestamp = -1;
         pwm_input_pulse_usec = 0;
     }
 }
