@@ -22,7 +22,7 @@ class Charger
       
     void cycle2000_500();
 
-
+    void cycle(unsigned on, unsigned off);
 public:
     bool run(unsigned U_);
 

@@ -49,10 +49,14 @@ bool Charger::run(unsigned U_)
         return false;
     }
    
-    unsigned n=22500;                             //max run time in ruffly ms
+    unsigned n=22500;                           //max run time in ruffly ms
 
-    cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is small
+    cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is smal
 
+    //cycle(5, 0);                              //just for debug 
+    //cycle(5, 0);    //toff is 840ns, we need this to go down to 500ns
+   
+                                     
     while(board::getOutVoltageInVolts() < 30)
     {
         n--;
@@ -128,10 +132,46 @@ bool Charger::run(unsigned U_)
     return true;
 }
 
+
+void Charger::cycle(unsigned on, unsigned off)
+{
+
+    /* on:
+    0:350ns
+    1:650ns
+    2:1000ns
+    3:1250ns
+    4:1600ns
+    5:2000ns
+    
+    off:
+    0:840ns
+    1:1200ns
+    2:1500ns
+    3:1800ns
+    4:2200ns
+    */
+
+    __disable_irq();
+    //board::setPumpSwitch(true);           //too slow
+    LPC_GPIO[1].DATA[0b010111] = 0b010111;  // 1 ON
+    for (volatile unsigned i=0;  i<on;  i++){
+     //__asm__ volatile ("nop"); 
+    }
+
+    //board::setPumpSwitch(false);          //too slow
+    LPC_GPIO[1].DATA[0b010111] = 0b000000; // OFF
+    for (volatile unsigned i=0;  i<off;  i++){
+     //__asm__ volatile ("nop");     
+    }
+    __enable_irq();
+}
+    
+
 void Charger::cycle1000_7000()
 {
     __disable_irq();
-    for (unsigned i = 0; i < 120; i++)         // this takes ~1ms
+    for (unsigned i = 0; i < 3; i++)         // this takes ~50us
     {
 
         LPC_GPIO[1].DATA[0b010111] = 0b010111; // 1 ON

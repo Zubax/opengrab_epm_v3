@@ -60,12 +60,12 @@ void magnetOff()
     if(magnet_state == true)        //If we are not coming from the on state we skip a few cycles
     {
         board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
-
         board::setMagnetNeg();
-
         board::delayMSec(blah);
+        
         board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
         board::setMagnetNeg();
+        board::delayMSec(blah);
 
         board::syslog(chrg.run(300) ? "sucess \r\n" : "failed \r\n");
         board::setMagnetPos();
