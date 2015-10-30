@@ -27,7 +27,14 @@ void resetWatchdog();
 void setStatusLed(bool state);
 void setCanLed(bool state);
 
-void setPumpSwitch(bool state);
+/**
+ * Switches the pump specified number of times with specified duty cycle.
+ * Warning: this function does not check correctness of the arguments.
+ * All arguments MUST BE POSITIVE.
+ */
+void runPump(std::uint_fast16_t iterations,
+             std::uint_fast8_t delay_on,
+             std::uint_fast8_t delay_off);
 
 void setMagnetPos();
 void setMagnetNeg();

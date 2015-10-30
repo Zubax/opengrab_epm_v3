@@ -69,6 +69,18 @@ constexpr std::uint32_t PwmInputTimeoutUSec   = 100000;
 static std::uint32_t pwm_input_pulse_usec;
 static uavcan::MonotonicTime last_pwm_input_update_ts;
 
+struct CriticalSectionLocker
+{
+    CriticalSectionLocker()
+    {
+        __disable_irq();
+    }
+    ~CriticalSectionLocker()
+    {
+        __enable_irq();
+    }
+};
+
 struct PinMuxGroup
 {
     const unsigned pin      : 8;
@@ -329,9 +341,62 @@ void setCanLed(bool state)
     gpio::set(CanLedPortNum, CanLedPinMask, state ? CanLedPinMask : 0);
 }
 
-void setPumpSwitch(bool state)
+void runPump(std::uint_fast16_t iterations,
+             std::uint_fast8_t delay_on,
+             std::uint_fast8_t delay_off)
 {
-    gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, state ? PumpSwitchPinMask : 0);
+    CriticalSectionLocker locker;
+    /*
+     * Note that the following code has been carefully optimized for speed and determinism.
+     * The resulting assembly looks roughly as follows:
+     *
+     *     push    {r4, lr}
+     *     cpsid i
+     *
+     * .outer_loop:
+     *     mov    r4, #23
+     *     ldr    r3, .L31
+     *
+     *     str    r4, [r3, #92]
+     *
+     * .on_loop:
+     *     sub    r1, r1, #1
+     *     cmp    r1, #0
+     *     bne    .on_loop
+     *
+     *     str    r1, [r3, #92]
+     *
+     * .off_loop:
+     *     sub    r2, r2, #1
+     *     cmp    r2, #0
+     *     bne    .off_loop
+     *
+     *     sub    r0, r0, #1
+     *     cmp    r0, #0
+     *     bne    .outer_loop
+     *
+     *     cpsie i
+     *     pop    {r4, pc}
+     */
+    do
+    {
+        // On
+        gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, PumpSwitchPinMask);
+        do
+        {
+            asm volatile ("");
+        }
+        while (--delay_on);
+
+        // Off
+        gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, 0);
+        do
+        {
+            asm volatile ("");
+        }
+        while (--delay_off);
+    }
+    while (--iterations);
 }
 
 void setMagnetPos()
