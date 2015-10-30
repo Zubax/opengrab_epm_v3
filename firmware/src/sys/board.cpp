@@ -341,60 +341,66 @@ void setCanLed(bool state)
     gpio::set(CanLedPortNum, CanLedPinMask, state ? CanLedPinMask : 0);
 }
 
+/*
+ * Note: Moving the code to RAM makes it run faster, but it prevents the compiler from inlining it,
+ *       which adds the function call overhead.
+ */
+__attribute__((long_call, section(".data")))
 void runPump(std::uint_fast16_t iterations,
-             std::uint_fast8_t delay_on,
-             std::uint_fast8_t delay_off)
+             const std::uint_fast8_t delay_on,
+             const std::uint_fast8_t delay_off)
 {
     CriticalSectionLocker locker;
     /*
      * Note that the following code has been carefully optimized for speed and determinism.
      * The resulting assembly looks roughly as follows:
+     *   c0:   push {r4, r5, lr}
+     *   c2:   cpsid i
+     *   c4:   movs r5, #23
+     *   c6:   ldr r4, [pc, #32]       ; (0xe8 <runPump+40>)
+     *   c8:   adds r3, r1, #0
+     *   ca:   str r5, [r4, #92]       ; 0x5c
      *
-     *     push    {r4, lr}
-     *     cpsid i
+     *   cc:   subs r3, #1
+     *   ce:   cmp r3, #0
+     *   d0:   bne.n 0xcc <runPump+12>
      *
-     * .outer_loop:
-     *     mov    r4, #23
-     *     ldr    r3, .L31
+     *   d2:   str r3, [r4, #92]       ; 0x5c
+     *   d4:   adds r3, r2, #0
      *
-     *     str    r4, [r3, #92]
+     *   d6:   subs r3, #1
+     *   d8:   cmp r3, #0
+     *   da:   bne.n 0xd6 <runPump+22>
      *
-     * .on_loop:
-     *     sub    r1, r1, #1
-     *     cmp    r1, #0
-     *     bne    .on_loop
+     *   dc:   subs r0, #1
+     *   de:   cmp r0, #0
+     *   e0:   bne.n 0xc8 <runPump+8>
      *
-     *     str    r1, [r3, #92]
-     *
-     * .off_loop:
-     *     sub    r2, r2, #1
-     *     cmp    r2, #0
-     *     bne    .off_loop
-     *
-     *     sub    r0, r0, #1
-     *     cmp    r0, #0
-     *     bne    .outer_loop
-     *
-     *     cpsie i
-     *     pop    {r4, pc}
+     *   e2:   cpsie i
+     *   e4:   pop {r4, r5, pc}
+     *   e6:   movs r0, r0
+     *   e8:   movs r0, r0
+     *   ea:   str r1, [r0, r0]
      */
     do
     {
         // On
         gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, PumpSwitchPinMask);
+        auto ion = delay_on;
         do
         {
             asm volatile ("");
         }
-        while (--delay_on);
+        while (--ion);
 
         // Off
         gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, 0);
+        auto ioff = delay_off;
         do
         {
             asm volatile ("");
         }
-        while (--delay_off);
+        while (--ioff);
     }
     while (--iterations);
 }
