@@ -52,10 +52,17 @@ bool Charger::run(unsigned U_)
     
     unsigned on_time=((9000000/(supply_voltage_mV-500))/104);                                      //aproximation, it's probalby good, needs checking
     
-    const auto output_voltage_V = 100;  //board::getOutVoltageInVolts();
+    const auto output_voltage_V = board::getOutVoltageInVolts();
  
     
-    unsigned off_time=((((9000000/(supply_voltage_mV-500))/(output_voltage_V+1))*50)/104)+10;      //it's wrong needs fixing
+    unsigned off_time=((((9000000/(supply_voltage_mV-500))/(output_voltage_V+1))*50)-208)/104;     //should be correct now
+    
+    //when output_voltage is relaly low off time is to long
+    
+    if(off_time > 120)       //8us
+    {
+        off_time = 120;
+    }
     
     //debug
    
@@ -64,13 +71,13 @@ bool Charger::run(unsigned U_)
     
     //sanity check and run a few cycles 
 
-    if(on_time > 0 && on_time < 30)
+    if(on_time > 0 && on_time < 30  && off_time >0 )
     {
-        board::runPump(10,on_time,50);       
+        board::runPump(10,on_time,off_time);       
     }    
     
     return false;   //debug 
-
+    
     unsigned n=22500;                           //max run time in ruffly ms
 
     //cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is smal
