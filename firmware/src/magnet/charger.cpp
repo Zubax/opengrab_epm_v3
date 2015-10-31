@@ -16,7 +16,7 @@ bool Charger::run(unsigned U_)
 {
     /*
      * This is Plan A, run the flyback dynamicly
-     * On time is 5.25/(Vin-0.5V) [us, V]
+     * On time is 9000/(Vin-0.5V) [us, mV]
      * Off time is ((Vin*10)/Vout)*(Vin-0.5V) [us, V]
      * e = 2.625uJ / cycle
      * emax = 352,500uJ or 134,000 cycles
@@ -39,24 +39,50 @@ bool Charger::run(unsigned U_)
      * Duty cycle of 75% is probably ok, needs verification
      */
 
-    //check input voltage
-
+    //Check input voltage
+    
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-    if(supply_voltage_mV < 4500 ||
-        supply_voltage_mV > 6000)
+    if(supply_voltage_mV < 4500 || supply_voltage_mV > 6500)        //formated wrong?
     {
         board::syslog("Error bad voltage: ", supply_voltage_mV, " mV\r\n");
         return false;
     }
+    
+    //Calculate on and off time, this will turn into a radom number generator if Vin is out of range
+    
+    unsigned on_time=((9000000/(supply_voltage_mV-500))/104);                                      //aproximation, it's probalby good, needs checking
+    
+    const auto output_voltage_V = 100;  //board::getOutVoltageInVolts();
+ 
+    
+    unsigned off_time=((((9000000/(supply_voltage_mV-500))/(output_voltage_V+1))*50)/104)+10;      //it's wrong needs fixing
+    
+    //debug
    
+    board::syslog("\r\n ", on_time, "\r\n");
+    board::syslog("\r\n ", off_time, "\r\n");
+    
+    //sanity check and run a few cycles 
+
+    if(on_time > 0 && on_time < 30)
+    {
+        board::runPump(10,on_time,50);       
+    }    
+    
+    return false;   //debug 
+
     unsigned n=22500;                           //max run time in ruffly ms
 
-    cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is smal
+    //cycle1000_7000();                           //U out is very low, transfomers goes in saturation when toff is smal
 
     //cycle(5, 0);                              //just for debug 
     //cycle(5, 0);    //toff is 840ns, we need this to go down to 500ns
+    return true;
+                      
    
-                                     
+
+
+        
     while(board::getOutVoltageInVolts() < 30)
     {
         n--;

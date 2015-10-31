@@ -352,6 +352,10 @@ void runPump(std::uint_fast16_t iterations,
 {
     CriticalSectionLocker locker;
     /*
+     * Ton (ns) = (delay_on * 5 + 2) * 20.8     This is correct, are we using different compiler settings?
+     * off (ns) = (delay_off * 5 + 10) * 20.8    
+    */
+    /*
      * Note that the following code has been carefully optimized for speed and determinism.
      * The resulting assembly looks roughly as follows:
      *   c0:   push {r4, r5, lr}
