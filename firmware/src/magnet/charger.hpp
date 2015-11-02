@@ -12,20 +12,24 @@ namespace charger
 
 class Charger
 {
-    void cycle1000_7000();                      ///1000ns on, 7000ns off, total run time ~1ms
-
-    void cycle1500_5000();              
-    
-    void cycle1500_3000();
-
-    void cycle1500_1500();
-      
-    void cycle2000_500();
-
     void cycle(unsigned on, unsigned off);
-public:
-    bool run(unsigned U_);
 
+    unsigned U = 0;
+    
+    unsigned time_out = 0; 
+    
+    bool done;
+
+public:
+    
+    bool run();
+
+    void reset();
+    
+    void set(unsigned U_);
+
+    bool is_done();
+    
 };
 
 }

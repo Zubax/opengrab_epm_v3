@@ -36,13 +36,15 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
-    board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
+    chrg.set(450);
+    
+    board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
 
     board::setMagnetPos();
-
+    
     board::delayMSec(5);
-
-    board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
+    chrg.set(450);
+    board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
 
     board::setMagnetPos();
 
@@ -55,6 +57,7 @@ static bool magnet_state = false;
 //Todo, this needs to be calibrated
 void magnetOff()
 {
+    /*
     unsigned blah=5;
 
     if(magnet_state == true)        //If we are not coming from the on state we skip a few cycles
@@ -187,6 +190,7 @@ void magnetOff()
     board::delayMSec(250);
     board::delayMSec(250);
     board::delayMSec(250);
+    */
 }
 
 }
@@ -221,9 +225,10 @@ void poll()
         if (magnet_state == true)
         {
 
-            board::syslog("Calling mangetOff");
+           // board::syslog("Calling mangetOff");
             board::syslog("\r\n");
-            magnetOff();
+            magnetOn();
+        //    magnetOff();  //debug 
         }
 
         if (magnet_state == false)
