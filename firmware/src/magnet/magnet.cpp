@@ -37,15 +37,13 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 void magnetOn()
 {
     chrg.set(450);
-    
     board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
-
     board::setMagnetPos();
+    board::delayMSec(5);      //Thyristors switch of delay, can probably be reduced to 1ms
+
     
-    board::delayMSec(5);
     chrg.set(450);
     board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
-
     board::setMagnetPos();
 
     //limit duty cycle

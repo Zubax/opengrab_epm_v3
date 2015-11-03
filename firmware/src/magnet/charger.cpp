@@ -28,7 +28,7 @@ bool Charger::run()
 {
     /*
      * This is Plan A, run the flyback dynamicly
-     * On time is 9000/(Vin-0.5V) [us, mV]
+     * On time is 10000/(Vin-0.5V) [us, mV]
      * Off time is ((Vin*10)/Vout)*(Vin-0.5V) [us, V]
      * e = 2.625uJ / cycle
      * emax = 352,500uJ or 134,000 cycles
@@ -51,7 +51,6 @@ bool Charger::run()
      * Duty cycle of 75% is probably ok, needs verification
      */
 
-    //unsigned i = 0; //debug
  
     while(board::getOutVoltageInVolts() < U)
     {
@@ -60,23 +59,30 @@ bool Charger::run()
         const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
         if(supply_voltage_mV < 4500 || supply_voltage_mV > 6500)        //formated wrong?
         {
-            board::syslog("Error bad voltage: ", supply_voltage_mV, " mV\r\n");
+            //This should make the LED's blink in error patter,...
+            //When using a high impedance power source Vin can drop below 4500mV limit,..
+            board::syslog("Error input voltage out of range: ", supply_voltage_mV, " mV\r\n");
             return false;
         }
         
         //Calculate on and off time, this will turn into a radom number generator if Vin is out of range
         
-        unsigned on_time=((5000000/(supply_voltage_mV-500))/104);                                      //aproximation, it's probalby good, needs checking
+        //This is asuming that the induction is 10uH, thats a bit higher then the datasheet sais
+        //The fuse F1 and the 10uF bypass cap keep the sub us peak uner 1100A and RMS under 700mA 
+
+        //Asuming a bigger then 10uH inductor makes 600mV drop after the fuse but runs just fine, charge time of 150ms at Uin = 6.4V, 
+        //
+        
+        unsigned on_time=(((10000000/(supply_voltage_mV-500))-42)/104);                 //should be exact for a linear inductor
+                                                                                        //We are pushing the core right up to saturation so it's not eact science 
         
         const auto output_voltage_V = board::getOutVoltageInVolts(); 
-    
-        //i += 20;
-        
-        unsigned off_time=((5000000/(supply_voltage_mV-500)/(output_voltage_V+1))*50);                 //should be correct now
-        if(off_time > 312)                                                                             //prevent overflow 
+            
+        unsigned off_time=((10000000/(supply_voltage_mV-500)/(output_voltage_V+1))*50); //pretty close ot optimal 
+        if(off_time > 312)                                                              //prevent overflow 
             off_time = (off_time - 208)/104;
         else   
-            off_time = 1;
+            off_time = 1;     //we could posible shave of 30ms from the charge time if we had more resolution 
 
         //when output_voltage is relaly low off time is to long
         
@@ -86,6 +92,7 @@ bool Charger::run()
         }
 
         time_out--;
+
         if(time_out == 0)
         {      
             return false;                       //timed out, return with error 
@@ -96,12 +103,12 @@ bool Charger::run()
         if(on_time > 0 && on_time < 30  && off_time > 0)
         {
 
-            //board::syslog("\r\n U out   : ", output_voltage_V, "\r\n");
-            //board::syslog(" V in    : ", supply_voltage_mV, "\r\n");
-            //board::syslog(" on_time : ", on_time, "\r\n");
-            //board::syslog(" off_time: ", off_time, "\r\n");
+        //    board::syslog("\r\n U out   : ", output_voltage_V, "\r\n");
+        //    board::syslog(" V in    : ", supply_voltage_mV, "\r\n");
+        //    board::syslog(" on_time : ", on_time, "\r\n");
+        //    board::syslog(" off_time: ", off_time, "\r\n");
             
-            board::runPump(100,on_time,off_time);
+            board::runPump(1000,on_time,off_time);
 
                    
         }
