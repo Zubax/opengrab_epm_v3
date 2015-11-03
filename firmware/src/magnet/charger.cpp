@@ -1,4 +1,4 @@
-/*
+/*r
  * Copyright (c) 2015 Zubax Robotics, zubax.com
  * Distributed under the MIT License, available in the file LICENSE.
  * Author: Pavel Kirienko <pavel.kirienko@zubax.com>
@@ -15,7 +15,7 @@ namespace charger
 void Charger::set(unsigned U_)
 {
     U = U_;
-    time_out = 200000;       //time out in cycle count
+    time_out = 800;       //time out 
     done = false; 
 }
 bool Charger::is_done()
@@ -57,7 +57,7 @@ bool Charger::run()
          //Check input voltage
     
         const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-        if(supply_voltage_mV < 4500 || supply_voltage_mV > 6500)        //formated wrong?
+        if(supply_voltage_mV < 4500 || supply_voltage_mV > 6700)        //formated wrong?
         {
             //This should make the LED's blink in error patter,...
             //When using a high impedance power source Vin can drop below 4500mV limit,..
@@ -78,12 +78,13 @@ bool Charger::run()
         
         const auto output_voltage_V = board::getOutVoltageInVolts(); 
             
-        unsigned off_time=((10000000/(supply_voltage_mV-500)/(output_voltage_V+1))*50); //pretty close ot optimal 
+        unsigned off_time=((10000000/(supply_voltage_mV-500))/(output_voltage_V+1))*50; //pretty close ot optimal 
         if(off_time > 312)                                                              //prevent overflow 
             off_time = (off_time - 208)/104;
         else   
             off_time = 1;     //we could posible shave of 30ms from the charge time if we had more resolution 
 
+        //off_time++;
         //when output_voltage is relaly low off time is to long
         
         if(off_time > 120)       
@@ -91,16 +92,18 @@ bool Charger::run()
             off_time = 120;
         }
 
-        time_out--;
+        
 
         if(time_out == 0)
         {      
+            board::syslog("timed out \r\n");
             return false;                       //timed out, return with error 
         }
-          
+        
+        time_out--;
         //sanity check and run a few cycles 
 
-        if(on_time > 0 && on_time < 30  && off_time > 0)
+        if(on_time > 0 && on_time < 30 && time_out > 0)
         {
 
         //    board::syslog("\r\n U out   : ", output_voltage_V, "\r\n");
@@ -108,10 +111,11 @@ bool Charger::run()
         //    board::syslog(" on_time : ", on_time, "\r\n");
         //    board::syslog(" off_time: ", off_time, "\r\n");
             
-            board::runPump(1000,on_time,off_time);
-
-                   
+            board::runPump(300,on_time,off_time);
+            
         }
+        // this can take longer then 1 second 
+        board::resetWatchdog();
                
     }
 

@@ -36,159 +36,93 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
-    chrg.set(450);
-    board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(5);      //Thyristors switch of delay, can probably be reduced to 1ms
+    //Turning manget on, charge capacitor to 450V and dishcarge, twice
 
+
+    for(unsigned i = 0; i !=2; i++)
+    {
+        chrg.set(450);
+        
+        if(chrg.run())
+        {
+            board::setMagnetPos();
+            board::delayMSec(5);      //Thyristors switch of delay, can probably be reduced to 1ms
+        }
+        else 
+            board::syslog("Charger error");             // TODO report bad health 
+    }
     
-    chrg.set(450);
-    board::syslog(chrg.run() ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-
     //limit duty cycle
     board::delayMSec(250);
-    board::delayMSec(250);
+    board::delayMSec(250);    
 }
 
 static bool magnet_state = false;
-//Todo, this needs to be calibrated
+
 void magnetOff()
 {
-    /*
-    unsigned blah=5;
+    unsigned thyristor_turn_off_delay=5;        //in ms
 
-    if(magnet_state == true)        //If we are not coming from the on state we skip a few cycles
-    {
-        board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
-        board::setMagnetNeg();
-        board::delayMSec(blah);
+    unsigned cycle_array[31][2]={               //do we care about the extra size?
+        {450,0},
+        {450,0},
+        {300,1},
+        {180,0},
+        {162,1},
+        {146,0},
+        {131,1},
+        {118,0},
+        {106,1},
+        {96,0},
+        {86,1},
+        {77,0},
+        {70,1},
+        {63,0},
+        {56,1},
+        {51,0},
+        {46,1},
+        {41,0},
+        {37,1},
+        {33,0},
+        {30,1},
+        {27,0},
+        {24,1},
+        {22,0},
+        {20,1},
+        {18,0},
+        {16,1},
+        {14,0},
+        {13,1},
+        {12,0},
+        {10,1}
+    };
         
-        board::syslog(chrg.run(450) ? "sucess \r\n" : "failed \r\n");
-        board::setMagnetNeg();
-        board::delayMSec(blah);
-
-        board::syslog(chrg.run(300) ? "sucess \r\n" : "failed \r\n");
-        board::setMagnetPos();
-        board::delayMSec(blah);
+    for(unsigned i = 0; i != 30; i++)
+    {
+        chrg.set(cycle_array[i][0]);
+    
+        if(!chrg.run())                         //if error, 
+        {
+            board::syslog("Charger error");     // TODO report bad health
+        }                                       // ignor and keep going
+        if(cycle_array[i][1])                   //1 = pos
+        {
+            board::setMagnetPos();
+        }
+        if(!cycle_array[i][1])                  //0 = neg
+        {
+            board::setMagnetNeg();
+        }  
+        
+        board::delayMSec(thyristor_turn_off_delay); 
     }
 
-    board::syslog(chrg.run(180) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(162) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(146) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(131) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(118) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(106) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(96) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(86) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(77) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(70) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(63) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(56) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(51) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(46) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(41) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(37) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(33) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(30) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(27) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(24) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(22) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(20) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(18) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(16) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(14) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(13) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(12) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetNeg();
-    board::delayMSec(blah);
-
-    board::syslog(chrg.run(10) ? "sucess \r\n" : "failed \r\n");
-    board::setMagnetPos();
-
     //limit duty cycle
+
     board::delayMSec(250);
     board::delayMSec(250);
     board::delayMSec(250);
-    */
+    
 }
 
 }
@@ -225,8 +159,8 @@ void poll()
 
            // board::syslog("Calling mangetOff");
             board::syslog("\r\n");
-            magnetOn();
-        //    magnetOff();  //debug 
+        //    magnetOn();//debug 
+            magnetOff();  
         }
 
         if (magnet_state == false)
