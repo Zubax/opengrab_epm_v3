@@ -18,6 +18,7 @@ namespace
 {
 
 static charger::Charger chrg;
+static bool magnet_state = false;
 
 /// TODO: This will be removed
 void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
@@ -51,13 +52,13 @@ void magnetOn()
         else 
             board::syslog("Charger error");             // TODO report bad health 
     }
-    
+    magnet_state = true;
     //limit duty cycle
     board::delayMSec(250);
     board::delayMSec(250);    
 }
 
-static bool magnet_state = false;
+
 
 void magnetOff()
 {
@@ -99,6 +100,9 @@ void magnetOff()
         
     for(unsigned i = 0; i != 30; i++)
     {
+        if(i == 0 && magnet_state == false)     //manget was not on, we can skip the first 3 cycles
+            i = 2;
+
         chrg.set(cycle_array[i][0]);
     
         if(!chrg.run())                         //if error, 
@@ -115,6 +119,8 @@ void magnetOff()
         }  
         
         board::delayMSec(thyristor_turn_off_delay); 
+
+        magnet_state = false;
     }
 
     //limit duty cycle
@@ -157,24 +163,22 @@ void poll()
         if (magnet_state == true)
         {
 
-           // board::syslog("Calling mangetOff");
-            board::syslog("\r\n");
-        //    magnetOn();//debug 
+            board::syslog("Calling mangetOff \r\n");
             magnetOff();  
         }
 
         if (magnet_state == false)
         {
 
-            board::syslog("Calling magnetOn");
-            board::syslog("\r\n");
+            board::syslog("Calling magnetOn \r\n");
             magnetOn();
         }
-        magnet_state = !magnet_state;
-
+        
+        /*debug*/
         board::syslog("Magnet state:   ", int(magnet_state), "\r\n");
         board::syslog("Supply voltage: ", supply_voltage_mV, "mV\r\n");
         board::syslog("PWM width:      ", pwm_input, " usec\r\n");
+        
     }
 
     if(pwm_input > 1000 && pwm_input < 1250)
@@ -184,7 +188,8 @@ void poll()
 
         //Turn magnet off
         magnetOff();
-        magnet_state = false;
+
+        //magnet_state = false; //the state is now set in magnetOn/Off()
     }
 
     if(pwm_input > 1750 && pwm_input < 2000)
@@ -194,7 +199,8 @@ void poll()
 
         //Turn magnet on
         magnetOn();
-        magnet_state = true;
+
+        //magnet_state = true; //the state is now set in magnetOn/Off()
     }
 }
 
