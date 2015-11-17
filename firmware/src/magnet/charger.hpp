@@ -15,21 +15,19 @@ class Charger
     void cycle(unsigned on, unsigned off);
 
     unsigned U = 0;
-    
-    unsigned time_out = 0; 
-    
-    bool done;
+
+    unsigned time_out = 0;
+
+    bool done = false;
 
 public:
-    
     bool run();
 
     void reset();
-    
+
     void set(unsigned U_);
 
     bool is_done();
-    
 };
 
 }

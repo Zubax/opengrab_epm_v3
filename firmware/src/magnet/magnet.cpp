@@ -37,34 +37,32 @@ void blinkStatusMs(const unsigned delay_ms, unsigned times = 1)
 
 void magnetOn()
 {
-    //Turning manget on, charge capacitor to 450V and dishcarge, twice
-
-
-    for(unsigned i = 0; i !=2; i++)
+    // Turning manget on, charge capacitor to 450V and dishcarge, twice
+    for (unsigned i = 0; i != 2; i++)
     {
         chrg.set(450);
-        
-        if(chrg.run())
+
+        if (chrg.run())
         {
             board::setMagnetPos();
             board::delayMSec(5);      //Thyristors switch of delay, can probably be reduced to 1ms
         }
-        else 
-            board::syslog("Charger error");             // TODO report bad health 
+        else
+            board::syslog("Charger error");             // TODO report bad health
     }
+
     magnet_state = true;
     //limit duty cycle
     board::delayMSec(250);
-    board::delayMSec(250);    
+    board::delayMSec(250);
 }
-
-
 
 void magnetOff()
 {
-    unsigned thyristor_turn_off_delay=5;        //in ms
+    static constexpr unsigned ThyristorTurnOffDelayUSec = 5;
 
-    unsigned cycle_array[31][2]={               //do we care about the extra size?
+    static constexpr unsigned CycleArray[][2] =
+    {
         {450,0},
         {450,0},
         {300,1},
@@ -97,28 +95,28 @@ void magnetOff()
         {12,0},
         {10,1}
     };
-        
-    for(unsigned i = 0; i != 30; i++)
+
+    for (unsigned i = 0; i != 30; i++)
     {
-        if(i == 0 && magnet_state == false)     //manget was not on, we can skip the first 3 cycles
+        if (i == 0 && magnet_state == false)     // Manget was not on, we can skip the first 3 cycles
             i = 2;
 
-        chrg.set(cycle_array[i][0]);
-    
-        if(!chrg.run())                         //if error, 
+        chrg.set(CycleArray[i][0]);
+
+        if (!chrg.run())                         // If error,
         {
-            board::syslog("Charger error");     // TODO report bad health
-        }                                       // ignor and keep going
-        if(cycle_array[i][1])                   //1 = pos
+            board::syslog("Charger error");      // TODO report bad health
+        }                                        // ignore and keep going
+        if (CycleArray[i][1])                    // 1 = pos
         {
             board::setMagnetPos();
         }
-        if(!cycle_array[i][1])                  //0 = neg
+        if (!CycleArray[i][1])                   // 0 = neg
         {
             board::setMagnetNeg();
-        }  
-        
-        board::delayMSec(thyristor_turn_off_delay); 
+        }
+
+        board::delayMSec(ThyristorTurnOffDelayUSec);
 
         magnet_state = false;
     }
@@ -128,7 +126,6 @@ void magnetOff()
     board::delayMSec(250);
     board::delayMSec(250);
     board::delayMSec(250);
-    
 }
 
 }
@@ -164,7 +161,7 @@ void poll()
         {
 
             board::syslog("Calling mangetOff \r\n");
-            magnetOff();  
+            magnetOff();
         }
 
         if (magnet_state == false)
@@ -173,15 +170,15 @@ void poll()
             board::syslog("Calling magnetOn \r\n");
             magnetOn();
         }
-        
+
         /*debug*/
         board::syslog("Magnet state:   ", int(magnet_state), "\r\n");
         board::syslog("Supply voltage: ", supply_voltage_mV, "mV\r\n");
         board::syslog("PWM width:      ", pwm_input, " usec\r\n");
-        
+
     }
 
-    if(pwm_input > 1000 && pwm_input < 1250)
+    if (pwm_input > 1000 && pwm_input < 1250)
     {
         blinkStatusMs(30, 3);
         board::delayUSec(5);
@@ -192,7 +189,7 @@ void poll()
         //magnet_state = false; //the state is now set in magnetOn/Off()
     }
 
-    if(pwm_input > 1750 && pwm_input < 2000)
+    if (pwm_input > 1750 && pwm_input < 2000)
     {
         blinkStatusMs(30, 3);
         board::delayUSec(5);
