@@ -40,6 +40,34 @@ void callPollAndResetWatchdog()
 {
     board::resetWatchdog();
 
+    /*
+     * Status LED update
+     */
+    const auto ts = board::clock::getMonotonic();
+
+    static board::MonotonicTime led_update_deadline = ts;
+    static bool led_status = false;
+
+    if (ts >= led_update_deadline)
+    {
+        led_status = !led_status;
+        board::setStatusLed(led_status);
+
+        if (led_status)
+        {
+            led_update_deadline += board::MonotonicDuration::fromMSec(50);
+        }
+        else
+        {
+            led_update_deadline += board::MonotonicDuration::fromMSec(
+                (magnet::getHealth() == magnet::Health::Ok)      ? 950 :
+                (magnet::getHealth() == magnet::Health::Warning) ? 500 : 100);
+        }
+    }
+
+    /*
+     * PWM control update
+     */
     const auto pwm = board::getPwmInputPulseLengthInMicroseconds();
     if (pwm > 0)
     {
@@ -53,6 +81,9 @@ void callPollAndResetWatchdog()
         }
     }
 
+    /*
+     * Magnet update
+     */
     magnet::poll();
 }
 
@@ -228,32 +259,6 @@ void updateCanLed(const uavcan::TimerEvent&)
     board::setCanLed(uavcan_lpc11c24::CanDriver::instance().hadActivity());
 }
 
-class StatusLedTimer : public uavcan::TimerBase
-{
-    bool status_led_state = false;
-
-    void handleTimerEvent(const uavcan::TimerEvent&) override
-    {
-        status_led_state = !status_led_state;
-        board::setStatusLed(status_led_state);
-
-        if (status_led_state)
-        {
-            this->startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(50));
-        }
-        else
-        {
-            unsigned off_duration_msec = (magnet::getHealth() == magnet::Health::Ok)      ? 950 :
-                                         (magnet::getHealth() == magnet::Health::Warning) ? 500 : 100;
-
-            this->startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(off_duration_msec));
-        }
-    }
-
-public:
-    StatusLedTimer(uavcan::INode& node) : uavcan::TimerBase(node) { }
-};
-
 #if __GNUC__
 __attribute__((noinline))
 #endif
@@ -309,6 +314,14 @@ void init()
         board::die();
     }
 
+    /*
+     * Initializing other libuavcan-related objects
+     * Why reinterpret_cast<>() on function pointers? Try to remove it, or replace with static_cast. GCC is fun.   D:
+     */
+    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> can_led_timer(getNode());   // CAN LED tmr
+    can_led_timer.setCallback(reinterpret_cast<decltype(can_led_timer)::Callback>(&updateCanLed));
+    can_led_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(25));
+
     board::syslog("Node ID allocation...\r\n");
 
     getNode().setNodeID(performDynamicNodeIDAllocation());
@@ -319,20 +332,12 @@ void init()
 
     /*
      * Initializing other libuavcan-related objects
-     * Why reinterpret_cast<>() on function pointers? Try to remove it, or replace with static_cast. GCC is fun.   D:
      */
-    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> update_timer(getNode());
+    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> update_timer(getNode());    // Status pub
     update_timer.setCallback(reinterpret_cast<decltype(update_timer)::Callback>(&updateUavcanStatus));
     update_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(500));
 
-    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> can_led_timer(getNode());
-    can_led_timer.setCallback(reinterpret_cast<decltype(can_led_timer)::Callback>(&updateCanLed));
-    can_led_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(25));
-
-    static StatusLedTimer status_led_timer(getNode());
-    status_led_timer.startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(1));
-
-    static uavcan::Subscriber<uavcan::equipment::hardpoint::Command,
+    static uavcan::Subscriber<uavcan::equipment::hardpoint::Command,                                    // Command sub
                               void (*)(const uavcan::equipment::hardpoint::Command&)> command_sub(getNode());
     if (command_sub.start(reinterpret_cast<decltype(command_sub)::Callback>(&handleHardpointCommand)) < 0)
     {
