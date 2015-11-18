@@ -203,8 +203,56 @@ void updateUavcanStatus(const uavcan::TimerEvent&)
 {
     publishHardpointStatus();
 
-    // TODO: node health update
+    switch (magnet::getHealth())
+    {
+    case magnet::Health::Ok:
+    {
+        getNode().setHealthOk();
+        break;
+    }
+    case magnet::Health::Warning:
+    {
+        getNode().setHealthWarning();
+        break;
+    }
+    default:
+    {
+        getNode().setHealthError();
+        break;
+    }
+    }
 }
+
+void updateCanLed(const uavcan::TimerEvent&)
+{
+    board::setCanLed(uavcan_lpc11c24::CanDriver::instance().hadActivity());
+}
+
+class StatusLedTimer : public uavcan::TimerBase
+{
+    bool status_led_state = false;
+
+    void handleTimerEvent(const uavcan::TimerEvent&) override
+    {
+        status_led_state = !status_led_state;
+        board::setStatusLed(status_led_state);
+
+        if (status_led_state)
+        {
+            this->startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(50));
+        }
+        else
+        {
+            unsigned off_duration_msec = (magnet::getHealth() == magnet::Health::Ok)      ? 950 :
+                                         (magnet::getHealth() == magnet::Health::Warning) ? 500 : 100;
+
+            this->startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(off_duration_msec));
+        }
+    }
+
+public:
+    StatusLedTimer(uavcan::INode& node) : uavcan::TimerBase(node) { }
+};
 
 #if __GNUC__
 __attribute__((noinline))
@@ -276,6 +324,13 @@ void init()
     static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> update_timer(getNode());
     update_timer.setCallback(reinterpret_cast<decltype(update_timer)::Callback>(&updateUavcanStatus));
     update_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(500));
+
+    static uavcan::TimerEventForwarder<void (*)(const uavcan::TimerEvent&)> can_led_timer(getNode());
+    can_led_timer.setCallback(reinterpret_cast<decltype(can_led_timer)::Callback>(&updateCanLed));
+    can_led_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(25));
+
+    static StatusLedTimer status_led_timer(getNode());
+    status_led_timer.startOneShotWithDelay(uavcan::MonotonicDuration::fromMSec(1));
 
     static uavcan::Subscriber<uavcan::equipment::hardpoint::Command,
                               void (*)(const uavcan::equipment::hardpoint::Command&)> command_sub(getNode());
