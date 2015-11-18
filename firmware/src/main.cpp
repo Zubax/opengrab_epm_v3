@@ -39,6 +39,20 @@ std::uint8_t getHardpointID()
 void callPollAndResetWatchdog()
 {
     board::resetWatchdog();
+
+    const auto pwm = board::getPwmInputPulseLengthInMicroseconds();
+    if (pwm > 0)
+    {
+        if (pwm > 1750)
+        {
+            magnet::turnOn(1);
+        }
+        if (pwm < 1250)
+        {
+            magnet::turnOff();
+        }
+    }
+
     magnet::poll();
 }
 

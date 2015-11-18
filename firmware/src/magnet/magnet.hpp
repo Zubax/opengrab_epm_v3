@@ -16,6 +16,22 @@ void init();
  */
 void poll();
 
+/**
+ * Maximum number of turn on/off switching cycles.
+ */
+static constexpr std::uint8_t NumCyclesMax = 10;
+
+/**
+ * Turns the magnet on.
+ * @param num_cycles    - number of switch cycles
+ */
+void turnOn(std::uint8_t num_cycles);
+
+/**
+ * Turns the magnet off. The number of switch cycles is fixed.
+ */
+void turnOff();
+
 enum class Health : std::uint8_t
 {
     Ok,

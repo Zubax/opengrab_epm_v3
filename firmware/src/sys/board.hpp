@@ -5,11 +5,24 @@
  * Author: Andreas Jochum <Andreas@Nicadrone.com>
  */
 
+#pragma once
+
 #include <cstdint>
 #include <array>
+#include <uavcan_lpc11c24/clock.hpp>
 
 namespace board
 {
+
+namespace clock
+{
+
+using uavcan_lpc11c24::clock::getMonotonic;
+
+}
+
+using uavcan::MonotonicTime;
+using uavcan::MonotonicDuration;
 
 #if __GNUC__
 __attribute__((noreturn))

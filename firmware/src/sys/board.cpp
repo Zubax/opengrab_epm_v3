@@ -465,10 +465,7 @@ unsigned getSupplyVoltageInMillivolts()
 
     x *= 5;                             //should be x*=5.5
     x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV -
-    if (x < 4500)                       //Under 4500mV Vref drops, mesurements useless
-    {
-        x = 0;
-    }
+
     return x;                           // Voltage divider on board, shoud not go here
 }
 

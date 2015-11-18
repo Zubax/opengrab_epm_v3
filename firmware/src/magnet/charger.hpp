@@ -7,27 +7,28 @@
 
 #pragma once
 
+#include <sys/board.hpp>
+
 namespace charger
 {
 
 class Charger
 {
-    void cycle(unsigned on, unsigned off);
+    const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(1000);
 
-    unsigned U = 0;
-
-    unsigned time_out = 0;
-
-    bool done = false;
+    unsigned target_output_voltage_ = 0;
 
 public:
-    bool run();
+    Charger(unsigned target_output_voltage);
 
-    void reset();
+    enum class Status : std::uint8_t
+    {
+        Done,
+        InProgress,
+        Failure
+    };
 
-    void set(unsigned U_);
-
-    bool is_done();
+    Status runAndGetStatus();
 };
 
 }
