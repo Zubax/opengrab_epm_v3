@@ -82,6 +82,21 @@ void callPollAndResetWatchdog()
     }
 
     /*
+     * Button update
+     */
+    if (board::hadButtonPressEvent())
+    {
+        if (magnet::isTurnedOn())
+        {
+            magnet::turnOff();
+        }
+        else
+        {
+            magnet::turnOn(2);          // Magic number
+        }
+    }
+
+    /*
      * Magnet update
      */
     magnet::poll();
