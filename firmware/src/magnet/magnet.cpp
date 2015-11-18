@@ -66,6 +66,8 @@ static int remaining_cycles = 0;
 
 static Health health = Health::Ok;
 
+static bool magnet_is_on = false;               ///< This is default
+
 
 void pollOn()
 {
@@ -84,6 +86,7 @@ void pollOn()
     else if (status == charger::Charger::Status::Done)
     {
         board::setMagnetPos();          // The cap is charged, switching the magnet
+        magnet_is_on = true;
 
         chrg.destroy();                 // Then updating the state
         remaining_cycles--;
@@ -124,6 +127,7 @@ void pollOff()
         else
         {
             board::setMagnetNeg();
+            magnet_is_on = false;
         }
 
         chrg.destroy();
@@ -169,6 +173,11 @@ void turnOff()
             chrg.destroy();
         }
     }
+}
+
+bool isTurnedOn()
+{
+    return magnet_is_on;
 }
 
 void poll()

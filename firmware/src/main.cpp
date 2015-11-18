@@ -225,7 +225,7 @@ void publishHardpointStatus()
     uavcan::equipment::hardpoint::Status msg;
 
     msg.hardpoint_id = getHardpointID();
-    msg.status = 0;                                             // XXX TODO
+    msg.status = magnet::isTurnedOn() ? 1 : 0;
 
     (void)pub.broadcast(msg);
 }

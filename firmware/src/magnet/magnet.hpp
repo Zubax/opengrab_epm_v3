@@ -32,6 +32,8 @@ void turnOn(std::uint8_t num_cycles);
  */
 void turnOff();
 
+bool isTurnedOn();
+
 enum class Health : std::uint8_t
 {
     Ok,
