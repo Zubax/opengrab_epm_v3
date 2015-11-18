@@ -104,7 +104,6 @@ constexpr PinMuxGroup pinmux[] =
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
-    { IOCON_PIO1_10, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // LED2
     { IOCON_PIO1_11, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // CAN LED
 #endif
 
@@ -239,10 +238,10 @@ void initGpio()
     gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinMask23 | MagnetCtrlPinMask14, 0);
 
     // PWM input config
-    LPC_GPIO[PwmPortNum].IBE |= PwmInputPinMask;
-    LPC_GPIO[PwmPortNum].IE  |= PwmInputPinMask;
-
-    //NVIC_EnableIRQ(EINT2_IRQn);
+    // IBE must be configured in the IRQ handler because of the hardware bug (long story TODO document later)
+    LPC_GPIO[PwmPortNum].IE  = PwmInputPinMask;
+    LPC_GPIO[PwmPortNum].IC  = PwmInputPinMask;
+    NVIC_EnableIRQ(EINT2_IRQn);
     NVIC_SetPriority(EINT2_IRQn, 0);    // Highest
 }
 
@@ -273,6 +272,10 @@ void init()
 
     initWatchdog();
     initClock();
+
+    // Must be initialized before GPIO because PWM capture logic needs the clock
+    uavcan_lpc11c24::clock::init();
+
     initGpio();
     initAdc();
     initUart();
@@ -581,6 +584,8 @@ void PIOINT2_IRQHandler()
 
     if ((LPC_GPIO[PwmPortNum].MIS & PwmInputPinMask) != 0)
     {
+        // This is a work-around for a hardware bug, see above
+        LPC_GPIO[PwmPortNum].IBE = PwmInputPinMask;
         LPC_GPIO[PwmPortNum].IC = PwmInputPinMask;
 
         static uavcan::MonotonicTime prev_ts;

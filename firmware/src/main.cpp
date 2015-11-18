@@ -201,11 +201,6 @@ void init()
     board::resetWatchdog();
 
     /*
-     * Configuring the clock
-     */
-    uavcan_lpc11c24::clock::init();
-
-    /*
      * Initializing the magnet before first poll() is called
      */
     magnet::init();
