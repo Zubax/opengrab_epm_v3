@@ -53,6 +53,17 @@ File: firmware.hex
 
 Start!
 
+
+## Configuring CAN node ID
+
+configurable hardpoint ID range is 0 to 7, inclusive
+it is assigned by the lowest 3 bits of the DIP switch
+the highest bit enables fixed node ID
+if the highest bit is LOW, the device will perform dynamic node ID allocation
+if the highest bit is HIGH, the device will use node ID that is (hardpoint ID + 100)
+try that
+therefore if the highest bit is 1, you don't need the dynamic node ID allocation server
+
 ## Something exploded?
 
 oops sorry
