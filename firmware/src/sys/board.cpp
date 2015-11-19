@@ -467,10 +467,12 @@ unsigned getSupplyVoltageInMillivolts()
 
     old_value = new_value;
 
-    x *= 5;                             //should be x*=5.5
-    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV -
+    x *= 5;                             // Should be x*=5.5
+    x += 650;                           // Poor man's optimizatin to not unintegerify the math, it's within 100mV -
 
-    return x;                           // Voltage divider on board, shoud not go here
+    x = std::max(4500U, x);             // This is because measurements below this voltage are highly unreliable
+
+    return x;
 }
 
 unsigned getOutVoltageInVolts()
@@ -492,13 +494,29 @@ unsigned getOutVoltageInVolts()
 #if __GNUC__
 __attribute__((optimize(1)))    // Fails
 #endif
-unsigned getPwmInputPulseLengthInMicroseconds()
+PwmInput getPwmInput()
 {
     if ((uavcan_lpc11c24::clock::getMonotonic() - last_pwm_input_update_ts).toUSec() > PwmInputTimeoutUSec)
     {
         pwm_input_pulse_usec = 0;
     }
-    return pwm_input_pulse_usec;
+
+    if (pwm_input_pulse_usec == 0)
+    {
+        return PwmInput::NoSignal;
+    }
+    else if (pwm_input_pulse_usec < 1250)
+    {
+        return PwmInput::Low;
+    }
+    else if (pwm_input_pulse_usec > 1750)
+    {
+        return PwmInput::High;
+    }
+    else
+    {
+        return PwmInput::Neutral;
+    }
 }
 
 void delayUSec(std::uint8_t usec)
