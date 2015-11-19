@@ -41,12 +41,19 @@ Charger::Status Charger::runAndGetStatus()
      */
 
     // Check input voltage
-    const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-    if (supply_voltage_mV < 4400 ||
-        supply_voltage_mV > 6700)
+    auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
+
+    if (supply_voltage_mV > 6700 ||
+        supply_voltage_mV < 4300)
     {
         return Status::Failure;
     }
+    if (supply_voltage_mV < 4500)
+    {
+        supply_voltage_mV = 4500;
+    }
+    
+  
 
     // Check if we have timed out
     if (board::clock::getMonotonic() > deadline_)
@@ -66,12 +73,12 @@ Charger::Status Charger::runAndGetStatus()
      * Should be exact for a linear inductor.
      * We are pushing the core right up to saturation so it's not exact science.
      */
-    const unsigned on_time = (((10000000 / (supply_voltage_mV - 500)) - 42) / 104);
+    const unsigned on_time = (((5000000 / (supply_voltage_mV - 500)) - 42) / 104);
 
     /*
      * Pretty close to optimal
      */
-    unsigned off_time = ((10000000 / (supply_voltage_mV - 500)) / (board::getOutVoltageInVolts() + 1)) * 50;
+    unsigned off_time = ((5000000 / (supply_voltage_mV - 500)) / (board::getOutVoltageInVolts() + 1)) * 50;
 
     if (off_time > 312)     // Prevent overflow
     {
