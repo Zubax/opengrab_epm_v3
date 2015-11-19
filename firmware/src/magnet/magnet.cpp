@@ -55,6 +55,8 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
 
+static board::MonotonicDuration MinCommandInterval = board::MonotonicDuration::fromMSec(500);
+
 static uavcan::LazyConstructor<charger::Charger> chrg;
 
 /**
@@ -69,6 +71,8 @@ static Health health = Health::Ok;
 static std::uint8_t charger_status_flags = 0;
 
 static bool magnet_is_on = false;               ///< This is default
+
+static board::MonotonicTime last_command_ts;
 
 
 void updateChargerStatusFlags(std::uint8_t x)
@@ -155,6 +159,13 @@ void pollOff()
 
 void turnOn(unsigned num_cycles)
 {
+    const auto ts = board::clock::getMonotonic();
+    if (magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+    {
+        return;         // Rate limiting
+    }
+    last_command_ts = ts;
+
     if (remaining_cycles <= 0)
     {
         board::syslog("Mag on ", num_cycles, "\r\n");
@@ -171,6 +182,13 @@ void turnOn(unsigned num_cycles)
 
 void turnOff()
 {
+    const auto ts = board::clock::getMonotonic();
+    if (!magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+    {
+        return;         // Rate limiting
+    }
+    last_command_ts = ts;
+
     if (remaining_cycles >= 0)          // Ignore command if turnning off is already in progress
     {
         board::syslog("Mag off\r\n");
