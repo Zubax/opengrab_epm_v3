@@ -349,55 +349,28 @@ void runPump(std::uint_fast16_t iterations,
              const std::uint_fast8_t delay_on,
              const std::uint_fast8_t delay_off)
 {
-    CriticalSectionLocker locker;
     /*
      * Ton (ns)  = (delay_on  * 5 + 2)  * 20.8
-     * Toff (ns) = (delay_off * 5 + 10) * 20.8
-     */
-    /*
+     * Toff (ns) = (delay_off * 7 + 10) * 20.8
+     *
      * Note that the following code has been carefully optimized for speed and determinism.
-     * The resulting assembly looks roughly as follows:
-     *   c0:   push {r4, r5, lr}
-     *   c2:   cpsid i
-     *   c4:   movs r5, #23
-     *   c6:   ldr r4, [pc, #32]       ; (0xe8 <runPump+40>)
-     *   c8:   adds r3, r1, #0
-     *   ca:   str r5, [r4, #92]       ; 0x5c
-     *
-     *   cc:   subs r3, #1
-     *   ce:   cmp r3, #0
-     *   d0:   bne.n 0xcc <runPump+12>
-     *
-     *   d2:   str r3, [r4, #92]       ; 0x5c
-     *   d4:   adds r3, r2, #0
-     *
-     *   d6:   subs r3, #1
-     *   d8:   cmp r3, #0
-     *   da:   bne.n 0xd6 <runPump+22>
-     *
-     *   dc:   subs r0, #1
-     *   de:   cmp r0, #0
-     *   e0:   bne.n 0xc8 <runPump+8>
-     *
-     *   e2:   cpsie i
-     *   e4:   pop {r4, r5, pc}
-     *   e6:   movs r0, r0
-     *   e8:   movs r0, r0
-     *   ea:   str r1, [r0, r0]
      */
     do
     {
         // On
-        gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, PumpSwitchPinMask);
-        auto ion = delay_on;
-        do
         {
-            asm volatile ("");
-        }
-        while (--ion);
+            CriticalSectionLocker locker;
+            gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, PumpSwitchPinMask);
+            auto ion = delay_on;
+            do
+            {
+                asm volatile ("");
+            }
+            while (--ion);
 
-        // Off
-        gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, 0);
+            // Off
+            gpio::set(PumpSwitchPortNum, PumpSwitchPinMask, 0);
+        }
         auto ioff = delay_off;
         do
         {

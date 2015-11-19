@@ -105,7 +105,7 @@ Charger::Status Charger::runAndGetStatus()
     // Sanity check and run a few cycles
     if (on_time > 0 && on_time < 30)
     {
-        board::runPump(300, on_time, off_time);
+        board::runPump(50, on_time, off_time);
     }
 
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
