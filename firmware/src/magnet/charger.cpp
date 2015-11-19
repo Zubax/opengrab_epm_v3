@@ -41,19 +41,13 @@ Charger::Status Charger::runAndGetStatus()
      */
 
     // Check input voltage
-    auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
+    const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
 
     if (supply_voltage_mV > 6700 ||
         supply_voltage_mV < 4300)
     {
         return Status::Failure;
     }
-    if (supply_voltage_mV < 4500)
-    {
-        supply_voltage_mV = 4500;
-    }
-    
-  
 
     // Check if we have timed out
     if (board::clock::getMonotonic() > deadline_)

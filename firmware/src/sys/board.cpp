@@ -467,10 +467,12 @@ unsigned getSupplyVoltageInMillivolts()
 
     old_value = new_value;
 
-    x *= 5;                             //should be x*=5.5
-    x += 650;                           //Poor man's optimizatin to not unintegerify the math, it's within 100mV -
+    x *= 5;                             // Should be x*=5.5
+    x += 650;                           // Poor man's optimizatin to not unintegerify the math, it's within 100mV -
 
-    return x;                           // Voltage divider on board, shoud not go here
+    x = std::max(4500U, x);             // This is because measurements below this voltage are highly unreliable
+
+    return x;
 }
 
 unsigned getOutVoltageInVolts()
