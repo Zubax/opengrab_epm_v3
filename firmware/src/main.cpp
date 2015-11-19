@@ -26,14 +26,28 @@ uavcan::Node<NodeMemoryPoolSize>& getNode()
     return node;
 }
 
-std::uint8_t getHardpointID()
+struct HwConfig
 {
-    static int cached = -1;
-    if (cached < 0)
+    std::uint8_t hardpoint_id = 0;
+    bool use_hardpoint_id_as_node_id = false;
+
+    static constexpr std::uint8_t NodeIDOffset = 100;
+};
+
+const HwConfig getHwConfig()
+{
+    static bool first = true;
+    static HwConfig cfg;
+
+    if (first)
     {
-        cached = board::readDipSwitch();
+        first = false;
+        const auto x = board::readDipSwitch();
+        cfg.hardpoint_id = x & ((1 << (board::DipSwitchBits - 1)) - 1);
+        cfg.use_hardpoint_id_as_node_id = (x >> (board::DipSwitchBits - 1)) != 0;
     }
-    return std::uint8_t(cached);
+
+    return cfg;
 }
 
 void callPollAndResetWatchdog()
@@ -214,7 +228,7 @@ void configureAcceptanceFilters()
 
 void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
 {
-    if (msg.hardpoint_id != getHardpointID())
+    if (msg.hardpoint_id != getHwConfig().hardpoint_id)
     {
         return;
     }
@@ -256,7 +270,7 @@ void publishHardpointStatus()
 
     uavcan::equipment::hardpoint::Status msg;
 
-    msg.hardpoint_id = getHardpointID();
+    msg.hardpoint_id = getHwConfig().hardpoint_id;
     msg.status = magnet::isTurnedOn() ? 1 : 0;
 
     (void)pub.broadcast(msg);
@@ -354,9 +368,16 @@ void init()
     can_led_timer.setCallback(reinterpret_cast<decltype(can_led_timer)::Callback>(&updateCanLed));
     can_led_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(25));
 
-    board::syslog("Node ID allocation...\r\n");
-
-    getNode().setNodeID(performDynamicNodeIDAllocation());
+    if (getHwConfig().use_hardpoint_id_as_node_id)
+    {
+        board::syslog("Node ID is fixed\r\n");
+        getNode().setNodeID(static_cast<std::uint8_t>(getHwConfig().hardpoint_id + HwConfig::NodeIDOffset));
+    }
+    else
+    {
+        board::syslog("Node ID allocation...\r\n");
+        getNode().setNodeID(performDynamicNodeIDAllocation());
+    }
 
     board::syslog("Node ID ", getNode().getNodeID().get(), "\r\n");
 

@@ -52,6 +52,7 @@ void runPump(std::uint_fast16_t iterations,
 void setMagnetPos();
 void setMagnetNeg();
 
+static constexpr std::uint8_t DipSwitchBits = 4;
 std::uint8_t readDipSwitch();
 
 /**

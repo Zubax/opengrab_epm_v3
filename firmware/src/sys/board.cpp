@@ -60,7 +60,7 @@ constexpr unsigned MagnetCtrlPortNum = 2;
 constexpr unsigned MagnetCtrlPinMask23 = (1U << 1) | (1U << 7);
 constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
 
-constexpr unsigned DipSwitchPortNum = 1;
+constexpr unsigned DipSwitchPortNum = 3;
 constexpr unsigned DipSwitchPinMask = 0b1111;
 
 constexpr std::uint32_t PwmInputPeriodMinUSec = 500;
