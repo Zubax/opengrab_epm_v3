@@ -299,6 +299,9 @@ void updateUavcanStatus(const uavcan::TimerEvent&)
         break;
     }
     }
+
+    getNode().setVendorSpecificStatusCode(
+        static_cast<std::uint16_t>(magnet::getStatusFlags() | ((board::getOutVoltageInVolts() >> 1) << 8)));
 }
 
 void updateCanLed(const uavcan::TimerEvent&)

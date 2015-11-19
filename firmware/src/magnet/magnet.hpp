@@ -43,4 +43,6 @@ enum class Health : std::uint8_t
 
 Health getHealth();
 
+std::uint8_t getStatusFlags();
+
 }

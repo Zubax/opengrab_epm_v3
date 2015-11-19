@@ -40,17 +40,27 @@ Charger::Status Charger::runAndGetStatus()
      * Duty cycle of 75% is probably ok, needs verification
      */
 
-    // Check input voltage
+    /*
+     * Error checks
+     */
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
 
-    if (supply_voltage_mV > 6700 ||
-        supply_voltage_mV < 4300)
+    if (supply_voltage_mV < 4300)
     {
-        return Status::Failure;
+        addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
-    // Check if we have timed out
+    if (supply_voltage_mV > 6700)
+    {
+        addErrorFlags(ErrorFlagInputVoltageTooHigh);
+    }
+
     if (board::clock::getMonotonic() > deadline_)
+    {
+        addErrorFlags(ErrorFlagTimeout);
+    }
+
+    if (error_flags_ != 0)
     {
         return Status::Failure;
     }

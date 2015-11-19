@@ -66,8 +66,15 @@ static int remaining_cycles = 0;
 
 static Health health = Health::Ok;
 
+static std::uint8_t charger_status_flags = 0;
+
 static bool magnet_is_on = false;               ///< This is default
 
+
+void updateChargerStatusFlags(std::uint8_t x)
+{
+    charger_status_flags = x;
+}
 
 void pollOn()
 {
@@ -78,6 +85,7 @@ void pollOn()
     }
 
     const auto status = chrg->runAndGetStatus();
+    updateChargerStatusFlags(chrg->getErrorFlags());
 
     if (status == charger::Charger::Status::InProgress)
     {
@@ -113,6 +121,7 @@ void pollOff()
     }
 
     const auto status = chrg->runAndGetStatus();
+    updateChargerStatusFlags(chrg->getErrorFlags());
 
     if (status == charger::Charger::Status::InProgress)
     {
@@ -206,6 +215,25 @@ void poll()
 Health getHealth()
 {
     return health;
+}
+
+std::uint8_t getStatusFlags()
+{
+    static constexpr std::uint8_t StatusFlagSwitchingOn  = 1 << (charger::Charger::ErrorFlagsBitLength + 0);
+    static constexpr std::uint8_t StatusFlagSwitchingOff = 1 << (charger::Charger::ErrorFlagsBitLength + 1);
+
+    std::uint8_t x = charger_status_flags;
+
+    if (remaining_cycles > 0)
+    {
+        x |= StatusFlagSwitchingOn;
+    }
+    if (remaining_cycles < 0)
+    {
+        x |= StatusFlagSwitchingOff;
+    }
+
+    return x;
 }
 
 }

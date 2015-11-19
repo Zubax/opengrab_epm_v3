@@ -17,6 +17,9 @@ class Charger
     const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(1000);
 
     unsigned target_output_voltage_ = 0;
+    std::uint8_t error_flags_ = 0;
+
+    void addErrorFlags(std::uint8_t x) { error_flags_ |= x; }
 
 public:
     Charger(unsigned target_output_voltage);
@@ -29,6 +32,14 @@ public:
     };
 
     Status runAndGetStatus();
+
+    static constexpr std::uint8_t ErrorFlagTimeout             = 1;
+    static constexpr std::uint8_t ErrorFlagInputVoltageTooLow  = 2;
+    static constexpr std::uint8_t ErrorFlagInputVoltageTooHigh = 4;
+
+    static constexpr std::uint8_t ErrorFlagsBitLength          = 4;
+
+    std::uint8_t getErrorFlags() const { return error_flags_; };
 };
 
 }
