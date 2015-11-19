@@ -433,7 +433,7 @@ std::uint8_t readDipSwitch()
 
 bool hadButtonPressEvent()
 {
-    constexpr std::uint8_t PressCounterThreshold = 100;
+    constexpr std::uint8_t PressCounterThreshold = 200;
     static std::uint8_t press_counter = 0;
 
     if (gpio::markOutputs(StatusLedPortNum, StatusLedPinMask) != 0)
