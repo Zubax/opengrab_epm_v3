@@ -11,6 +11,11 @@
 #include <array>
 #include <uavcan_lpc11c24/clock.hpp>
 
+/// Testing stub
+#ifndef BOARD_OLIMEX_LPC_P11C24
+# define BOARD_OLIMEX_LPC_P11C24 0
+#endif
+
 namespace board
 {
 

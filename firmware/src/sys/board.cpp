@@ -17,10 +17,6 @@
 #include <array>
 #include <uavcan_lpc11c24/clock.hpp>
 
-#ifndef BOARD_OLIMEX_LPC_P11C24
-#define BOARD_OLIMEX_LPC_P11C24 0
-#endif
-
 #define PDRUNCFGUSEMASK 0x0000ED00
 #define PDRUNCFGMASKTMP 0x000000FF
 
@@ -472,6 +468,9 @@ unsigned getSupplyVoltageInMillivolts()
 
     x = std::max(4500U, x);             // This is because measurements below this voltage are highly unreliable
 
+#if BOARD_OLIMEX_LPC_P11C24
+    x = 5000;                           // Simulation...
+#endif
     return x;
 }
 
