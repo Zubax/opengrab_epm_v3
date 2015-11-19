@@ -19,13 +19,13 @@ void poll();
 /**
  * Maximum number of turn on/off switching cycles.
  */
-static constexpr std::uint8_t NumCyclesMax = 10;
+static constexpr std::uint8_t MaxCycles = 10;
 
 /**
  * Turns the magnet on.
  * @param num_cycles    - number of switch cycles
  */
-void turnOn(std::uint8_t num_cycles);
+void turnOn(unsigned num_cycles);
 
 /**
  * Turns the magnet off. The number of switch cycles is fixed.

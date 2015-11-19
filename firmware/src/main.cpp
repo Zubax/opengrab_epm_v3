@@ -219,9 +219,21 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
         return;
     }
 
-    board::syslog("Cmd ", msg.command, "\r\n");
+    static unsigned last_command = 0;
 
-    // XXX TODO handle
+    if ((bool(msg.command) != magnet::isTurnedOn()) || (msg.command != last_command))
+    {
+        if (msg.command == 0)
+        {
+            magnet::turnOff();
+        }
+        else
+        {
+            magnet::turnOn(std::min<decltype(msg.command)>(msg.command, magnet::MaxCycles));
+        }
+    }
+
+    last_command = msg.command;
 }
 
 void publishHardpointStatus()

@@ -149,9 +149,14 @@ void init()
     remaining_cycles = 0;
 }
 
-void turnOn(std::uint8_t num_cycles)
+void turnOn(unsigned num_cycles)
 {
-    remaining_cycles = std::max<std::uint8_t>(1, num_cycles);
+    if (remaining_cycles <= 0)
+    {
+        board::syslog("Mag on ", num_cycles, "\r\n");
+    }
+
+    remaining_cycles = int(std::min<unsigned>(std::max<unsigned>(1, num_cycles), MaxCycles));
 
     if (chrg.isConstructed() && (remaining_cycles <= 0))
     {
@@ -164,6 +169,8 @@ void turnOff()
 {
     if (remaining_cycles >= 0)          // Ignore command if turnning off is already in progress
     {
+        board::syslog("Mag off\r\n");
+
         // TODO Skip the first 3 cycles if the magnet was not on?
         remaining_cycles = -int(TurnOffCycleArraySize);
 
