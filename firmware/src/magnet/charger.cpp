@@ -108,11 +108,7 @@ Charger::Status Charger::runAndGetStatus()
         board::runPump(300, on_time, off_time);
     }
 
-#if BOARD_OLIMEX_LPC_P11C24
-    return Status::InProgress;                            // This is just a testing mock
-#else
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
-#endif
 }
 
 }
