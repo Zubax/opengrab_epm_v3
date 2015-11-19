@@ -8,9 +8,6 @@
 
 namespace magnet
 {
-
-void init();
-
 /**
  * This function will be called by the application wit maximum possible rate (typically > 1 kHz).
  */

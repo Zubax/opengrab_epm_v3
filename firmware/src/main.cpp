@@ -319,11 +319,6 @@ void init()
     board::syslog("Boot\r\n");
     board::resetWatchdog();
 
-    /*
-     * Initializing the magnet before first poll() is called
-     */
-    magnet::init();
-
     callPollAndResetWatchdog();
 
     /*

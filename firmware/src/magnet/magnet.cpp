@@ -151,12 +151,7 @@ void pollOff()
     }
 }
 
-}
-
-void init()
-{
-    remaining_cycles = 0;
-}
+} // namespace
 
 void turnOn(unsigned num_cycles)
 {
