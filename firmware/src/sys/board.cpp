@@ -344,16 +344,45 @@ void setCanLed(bool state)
  * Note: Moving the code to RAM makes it run faster, but it prevents the compiler from inlining it,
  *       which adds the function call overhead.
  */
-__attribute__((long_call, section(".data")))
+__attribute__((noinline, long_call, section(".data")))
 void runPump(std::uint_fast16_t iterations,
              const std::uint_fast8_t delay_on,
              const std::uint_fast8_t delay_off)
 {
     /*
      * Ton (ns)  = (delay_on  * 5 + 2)  * 20.8
-     * Toff (ns) = (delay_off * 7 + 10) * 20.8
+     * Toff (ns) = (delay_off * 5 + 12) * 20.8
      *
      * Note that the following code has been carefully optimized for speed and determinism.
+     *
+     * 100000c0:   movs r0, #50    ; 0x32
+     * 100000c2:   push {r4, lr}
+     *
+     * 100000c4:   cpsid i
+     * 100000c6:   movs r3, #23
+     * 100000c8:   ldr r4, [pc, #28]       ; (0x100000e8 <_ZN5board7runPumpEjjj.constprop.75+40>)
+     * 100000ca:   str r3, [r4, #92]       ; 0x5c
+     * 100000cc:   adds r3, r1, #0
+     *
+     * 100000ce:   subs r3, #1
+     * 100000d0:   cmp r3, #0
+     * 100000d2:   bne.n 0x100000ce <_ZN5board7runPumpEjjj.constprop.75+14>
+     *
+     * 100000d4:   str r3, [r4, #92]       ; 0x5c
+     * 100000d6:   cpsie i
+     * 100000d8:   adds r3, r2, #0
+     *
+     * 100000da:   subs r3, #1
+     * 100000dc:   cmp r3, #0
+     * 100000de:   bne.n 0x100000da <_ZN5board7runPumpEjjj.constprop.75+26>
+     *
+     * 100000e0:   subs r0, #1
+     * 100000e2:   cmp r0, #0
+     * 100000e4:   bne.n 0x100000c4 <_ZN5board7runPumpEjjj.constprop.75+4>
+     *
+     * 100000e6:   pop {r4, pc}
+     * 100000e8:   movs r0, r0
+     * 100000ea:   str r1, [r0, r0]
      */
     do
     {

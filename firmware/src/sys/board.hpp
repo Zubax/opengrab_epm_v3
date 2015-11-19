@@ -50,6 +50,7 @@ void setCanLed(bool state);
  * Warning: this function does not check correctness of the arguments.
  * All arguments MUST BE POSITIVE.
  */
+__attribute__((noinline, long_call, section(".data")))
 void runPump(std::uint_fast16_t iterations,
              std::uint_fast8_t delay_on,
              std::uint_fast8_t delay_off);
