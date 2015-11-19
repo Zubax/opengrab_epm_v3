@@ -223,8 +223,6 @@ void configureAcceptanceFilters()
     {
         board::die();
     }
-
-    board::syslog("Installed ", filter_config_index, " HW filters\r\n");
 }
 
 void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
@@ -330,7 +328,6 @@ void init()
     std::uint32_t bit_rate = 0;
     while (bit_rate == 0)
     {
-        board::syslog("CAN auto bitrate...\r\n");
         bit_rate = uavcan_lpc11c24::CanDriver::detectBitRate(&callPollAndResetWatchdog);
     }
     board::syslog("Bitrate: ", bit_rate, "\r\n");
