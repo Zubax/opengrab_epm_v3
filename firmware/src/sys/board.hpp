@@ -66,11 +66,17 @@ unsigned getSupplyVoltageInMillivolts();
 unsigned getOutVoltageInVolts();
 
 /**
- * Returns pulse length of the input PWM in microseconds if the signal is present and valid.
- * If PWM signal is not present, or if the pulse length not within the range [500, 2500] microseconds,
- * the function will return zero.
+ * Status of the PWM input.
  */
-unsigned getPwmInputPulseLengthInMicroseconds();
+enum class PwmInput : std::uint8_t
+{
+    NoSignal,
+    Low,
+    Neutral,
+    High
+};
+
+PwmInput getPwmInput();
 
 /**
  * Delays execution in a busyloop for the specified amount of microseconds.

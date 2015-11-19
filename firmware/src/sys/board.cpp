@@ -492,13 +492,29 @@ unsigned getOutVoltageInVolts()
 #if __GNUC__
 __attribute__((optimize(1)))    // Fails
 #endif
-unsigned getPwmInputPulseLengthInMicroseconds()
+PwmInput getPwmInput()
 {
     if ((uavcan_lpc11c24::clock::getMonotonic() - last_pwm_input_update_ts).toUSec() > PwmInputTimeoutUSec)
     {
         pwm_input_pulse_usec = 0;
     }
-    return pwm_input_pulse_usec;
+
+    if (pwm_input_pulse_usec == 0)
+    {
+        return PwmInput::NoSignal;
+    }
+    else if (pwm_input_pulse_usec < 1250)
+    {
+        return PwmInput::Low;
+    }
+    else if (pwm_input_pulse_usec > 1750)
+    {
+        return PwmInput::High;
+    }
+    else
+    {
+        return PwmInput::Neutral;
+    }
 }
 
 void delayUSec(std::uint8_t usec)

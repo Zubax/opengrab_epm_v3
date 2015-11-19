@@ -82,14 +82,15 @@ void callPollAndResetWatchdog()
     /*
      * PWM control update
      */
-    const auto pwm = board::getPwmInputPulseLengthInMicroseconds();
-    if (pwm > 0)
+    const auto pwm = board::getPwmInput();
+    if (pwm != board::PwmInput::NoSignal &&
+        pwm != board::PwmInput::Neutral)
     {
-        if (pwm > 1750)
+        if (pwm == board::PwmInput::High)
         {
             magnet::turnOn(1);
         }
-        if (pwm < 1250)
+        if (pwm == board::PwmInput::Low)
         {
             magnet::turnOff();
         }
