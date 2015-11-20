@@ -300,10 +300,6 @@ void updateUavcanStatus(const uavcan::TimerEvent&)
 
     getNode().setVendorSpecificStatusCode(
         static_cast<std::uint16_t>(magnet::getStatusFlags() | ((board::getOutVoltageInVolts() >> 1) << 8)));
-
-    board::syslog("Mag stat ", magnet::getStatusFlags(), ", ");
-    board::syslog("Sup ", board::getSupplyVoltageInMillivolts(), "mV, ");
-    board::syslog("Cap ", board::getOutVoltageInVolts(), "V\r\n");
 }
 
 void updateCanLed(const uavcan::TimerEvent&)
