@@ -159,48 +159,33 @@ void pollOff()
 
 void turnOn(unsigned num_cycles)
 {
-    const auto ts = board::clock::getMonotonic();
-    if (magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+    if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-        return;         // Rate limiting
-    }
-    last_command_ts = ts;
-
-    if (remaining_cycles <= 0)
-    {
-        board::syslog("Mag on ", num_cycles, "\r\n");
-
-        if (chrg.isConstructed())
+        const auto ts = board::clock::getMonotonic();
+        if (magnet_is_on && (ts - last_command_ts < MinCommandInterval))
         {
-            board::syslog("Charger restart\r\n");
-            chrg.destroy();
+            return;         // Rate limiting
         }
-    }
+        last_command_ts = ts;
 
-    remaining_cycles = int(std::min<unsigned>(std::max<unsigned>(1, num_cycles), MaxCycles));
+        board::syslog("Mag on ", num_cycles, "\r\n");
+        remaining_cycles = int(std::min<unsigned>(std::max<unsigned>(1, num_cycles), MaxCycles));
+    }
 }
 
 void turnOff()
 {
-    const auto ts = board::clock::getMonotonic();
-    if (!magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+    if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-        return;         // Rate limiting
-    }
-    last_command_ts = ts;
-
-    if (remaining_cycles >= 0)          // Ignore command if turnning off is already in progress
-    {
-        board::syslog("Mag off\r\n");
-
-        if (chrg.isConstructed())
+        const auto ts = board::clock::getMonotonic();
+        if (!magnet_is_on && (ts - last_command_ts < MinCommandInterval))
         {
-            board::syslog("Charger restart\r\n");
-            chrg.destroy();
+            return;         // Rate limiting
         }
+        last_command_ts = ts;
 
+        board::syslog("Mag off\r\n");
         remaining_cycles = -int(TurnOffCycleArraySize);
-
         if (!magnet_is_on)
         {
             remaining_cycles += 3;
