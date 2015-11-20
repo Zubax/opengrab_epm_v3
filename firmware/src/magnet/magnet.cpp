@@ -199,8 +199,12 @@ void turnOff()
             chrg.destroy();
         }
 
-        // TODO Skip the first 3 cycles if the magnet was not on!
         remaining_cycles = -int(TurnOffCycleArraySize);
+
+        if (!magnet_is_on)
+        {
+            remaining_cycles += 3;
+        }
     }
 }
 
