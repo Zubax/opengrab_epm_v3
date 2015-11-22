@@ -88,7 +88,7 @@ void callPollAndResetWatchdog()
     {
         if (pwm == board::PwmInput::High)
         {
-            magnet::turnOn(1);
+            magnet::turnOn(magnet::MinTurnOnCycles);
         }
         if (pwm == board::PwmInput::Low)
         {
@@ -107,7 +107,7 @@ void callPollAndResetWatchdog()
         }
         else
         {
-            magnet::turnOn(2);          // Magic number
+            magnet::turnOn(magnet::MinTurnOnCycles);
         }
     }
 
@@ -246,7 +246,7 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
         }
         else
         {
-            magnet::turnOn(std::min<decltype(msg.command)>(msg.command, magnet::MaxCycles));
+            magnet::turnOn(msg.command);
         }
     }
 

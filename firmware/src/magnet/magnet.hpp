@@ -16,6 +16,7 @@ void poll();
 /**
  * Maximum number of turn on/off switching cycles.
  */
+static constexpr std::uint8_t MinTurnOnCycles = 3;
 static constexpr std::uint8_t MaxCycles = 10;
 
 /**

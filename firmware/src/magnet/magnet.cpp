@@ -168,8 +168,11 @@ void turnOn(unsigned num_cycles)
         }
         last_command_ts = ts;
 
-        board::syslog("Mag on ", num_cycles, "\r\n");
-        remaining_cycles = int(std::min<unsigned>(std::max<unsigned>(1, num_cycles), MaxCycles));
+        num_cycles = std::max<unsigned>(MinTurnOnCycles, num_cycles);
+        num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
+        remaining_cycles = int(num_cycles);
+
+        board::syslog("Mag on ", remaining_cycles, "\r\n");
     }
 }
 
