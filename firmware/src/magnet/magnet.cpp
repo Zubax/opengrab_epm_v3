@@ -67,7 +67,7 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
 
-static board::MonotonicDuration MinCommandInterval = board::MonotonicDuration::fromMSec(500);
+static board::MonotonicDuration MinCommandInterval = board::MonotonicDuration::fromMSec(2500);
 
 static uavcan::LazyConstructor<charger::Charger> chrg;
 
