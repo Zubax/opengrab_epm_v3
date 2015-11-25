@@ -1,12 +1,12 @@
-OpenGrab EPM 688 V3
-===================
+OpenGrab EPM v3
+===============
 
-OpenGrab EPM 688 V3 is an electropermanent magnet, combining the advantages of electro and permanent magnets.
+OpenGrab EPM v3 is an electropermanent magnet, combining the advantages of electro and permanent magnets.
 It has been developed by [NicaDrone](http://nicadrone.com) in collaboration with [Zubax Robotics](http://zubax.com).
 
 Useful links:
 
-* [**PRODUCT DOCUMENTATION**](http://docs.zubax.com/opengrab_epm688_v3)
+* [**PRODUCT DOCUMENTATION**](http://docs.zubax.com/opengrab_epm_v3)
 * [HARDWARE SOURCES](https://tools.upverter.com/eda/#designId=1dada3422c772add)
 * [SUPPORT FORUM](http://productforums.zubax.com)
 
