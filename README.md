@@ -43,7 +43,7 @@ Wire    | Signal
 --------|--------
 Orange  | RXD
 Yellow  | TXD
-black   | GND
+Black   | GND
 
 #### Flashing with NXP Flash Magic
 
@@ -65,8 +65,9 @@ File            | Use the `.hex` file in the build output directory
 
 ### Via DroneCode Probe
 
-DroneCode Probe is a generic JTAG / SWD + UART console adapter compatible with most ARM Cortex based designs
-and in particular with hardware maintained by the [DroneCode project](http://dronecode.org).
+[DroneCode Probe](https://docs.zubax.com/dronecode_probe) is a generic JTAG / SWD + UART console adapter
+compatible with most ARM Cortex based designs and in particular with hardware maintained by the
+[DroneCode project](http://dronecode.org).
 
 In order to flash the board using this tool, simply connect the debugger and execute the script
 `blackmagic_flash.sh`.
