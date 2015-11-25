@@ -1,78 +1,79 @@
-# NicaDrone OpenGrab EPM688 V3.3 firmware update
+OpenGrab EPM 688 V3
+===================
 
-OpenGrab Electropermanent Magnet
+OpenGrab EPM 688 V3 is an electropermanent magnet, combining the advantages of electro and permanent magnets.
+It has been developed by [NicaDrone](http://nicadrone.com) in collaboration with [Zubax Robotics](http://zubax.com).
 
+Useful links:
 
+* [**PRODUCT DOCUMENTATION**](http://docs.zubax.com/opengrab_epm688_v3)
+* [HARDWARE SOURCES](https://tools.upverter.com/eda/#designId=1dada3422c772add)
+* [SUPPORT FORUM](http://productforums.zubax.com)
 
-## Building the firmeware on Debian-based system
+## Building the firmware
 
+### Prerequisites
 
-Clone the repo:
+* Python 2.7+ or Python 3.2+
+* ARM GCC Embedded 4.9+
 
-cd ..../home/git (or any directory you like)
+### Building
 
-git clone https://github.com/Zubax/opengrab_epm.git
+After cloning this repository, execute the following:
 
-todo: something is missing here
+```bash
+git submodule update --init --recursive
+cd firmware
+make -j8
+```
 
-cd opengrab_epm
+The build outputs will be available in the directory `build/`.
 
-make
+## Flashing the firmware
 
-cd build
+### Via UART
 
-ls
+#### Connecting USB-UART adapter
 
-..
+FTDI cable is the recommended USB-UART adapter.
+5 V and 3.3 V FTDI cables work fine, 3.3 V is recommended.
+Use the following pinout when connecting:
 
-firmware.bin
-firmware.elf
-firmware.hex
+Wire    | Signal
+--------|--------
+Orange  | RXD
+Yellow  | TXD
+black   | GND
 
-## Flashing firmware over serial in Windows based system
+#### Flashing with NXP Flash Magic
 
-Close J4 force the LPC start a bootloader
+Get the flashing tool from <http://www.flashmagictool.com/>.
+Start the tool, then configure it as follows:
 
-Close J3 select to serial bootloader
-alternatively open J3 to start the CAN bootloader
+Parameter       | Value
+----------------|------------------------------------
+Baud rate       | 115200
+Interface       | ISP
+Oscilator       | 12 MHz
+File            | Use the `.hex` file in the build output directory
 
-Connect the EPM UART TX and RX to an FTDI cable
+1. Connect the USB-UART adapter.
+2. Close J3 to select serial bootloader.
+3. Close J4 to force the LPC to start the bootloader.
+4. Power up the board.
+5. Run the flashing tool.
 
-Power up the board
+### Via DroneCode Probe
 
-Get the NXP Flash Magic serial flasher
-http://www.flashmagictool.com/
+DroneCode Probe is a generic JTAG / SWD + UART console adapter compatible with most ARM Cortex based designs
+and in particular with hardware maintained by the [DroneCode project](http://dronecode.org).
 
-Baud Rate: 115200
+In order to flash the board using this tool, simply connect the debugger and execute the script
+`blackmagic_flash.sh`.
 
-Interface: ISP
+## Licenses
 
-Oscilator: 12Mhz
-
-File: firmware.hex
-
-Start!
-
-
-## Configuring CAN node ID
-
-configurable hardpoint ID range is 0 to 7, inclusive
-it is assigned by the lowest 3 bits of the DIP switch
-the highest bit enables fixed node ID
-if the highest bit is LOW, the device will perform dynamic node ID allocation
-if the highest bit is HIGH, the device will use node ID that is (hardpoint ID + 100)
-try that
-therefore if the highest bit is 1, you don't need the dynamic node ID allocation server
-
-## Something exploded?
-
-oops sorry
-Hardware:
-Andreas@NicaDrone.com
-Software:
-Pavel@Zubax.com
-
-## Firmware license
+### Firmware
 
 Copyright (C) 2015  Zubax Robotics <info@zubax.com>
 
@@ -88,3 +89,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+### Hardware
+
+The hardware sources are distributed under the terms of
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
