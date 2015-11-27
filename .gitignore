@@ -8,6 +8,7 @@ build
 .dep
 __pycache__
 *.pyc
+*.bin
 
 # Eclipse
 .metadata
