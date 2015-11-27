@@ -341,6 +341,25 @@ class BootloaderInterface:
         out = itertools.chain(*[self._upload_expedited(0x5100, x + 1)[1] for x in range(4)])
         return bytes(out)
 
+    def reset(self):
+        # See https://www.lpcware.com/content/forum/invoking-can-bootloader-via-iap-on-lpc11cxx-#comment-1119294
+        data = bytes([0x01, 0x4a, 0x02, 0x4b, 0xda, 0x60, 0xc0, 0x46, 0x04, 0x00, 0xfa, 0x05, 0x00, 0xed, 0x00, 0xe0])
+        data = data.ljust(256, b'\x00')
+
+        address = self.RAM_BUFFER_BASE_ADDRESS
+
+        logger.debug('Loading and executing %d bytes at %08x', len(data), address)
+
+        # Setting the RAM write address
+        self._download_expedited(0x5015, 0, address, 'u32')
+
+        # Loading into RAM
+        self._download_segmented(0x1F50, 1, data)
+
+        # Executing the code - this will reset the MCU
+        self._download_expedited(0x5070, 1, address, 'u32')
+        self._download_expedited(0x1F51, 1, 1, 'u8')
+
     def close(self):
         self.bus.close()
 
@@ -361,3 +380,5 @@ if __name__ == '__main__':
 
         if file_name:
             bli.load_firmware(file_name)
+
+        bli.reset()
