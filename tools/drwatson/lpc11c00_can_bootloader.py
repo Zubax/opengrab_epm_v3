@@ -10,6 +10,7 @@ import time
 import itertools
 import logging
 import can
+import warnings
 from contextlib import closing
 from enum import IntEnum
 
@@ -65,6 +66,7 @@ class BootloaderInterface:
     RAM_BUFFER_BASE_ADDRESS = 0x10000200
     FLASH_SECTOR_SIZE = 4096
     MAX_FLASH_SECTOR_NUM = 7
+    FLASH_OFFSET = 0
 
     def __init__(self, iface_name):
         self.bus = can.Bus(iface_name, self.TIMEOUT)
@@ -170,7 +172,6 @@ class BootloaderInterface:
         self._sdo_request(index, subindex, command_byte, SDOServerCommandSpecifier.initiate_download, req_payload)
 
         # Downloading the segments
-        offset = 0
         toggle = False
         for ch, last in mark_last_iteration(group_in_chunks(data, 7)):
             command_spec = SDOClientCommandSpecifier.segment_download
@@ -182,10 +183,6 @@ class BootloaderInterface:
             seg_payload = seg_payload.ljust(8, b'\x00')
 
             resp_command_specifier = SDOServerCommandSpecifier.segment_download
-
-            logger.debug('Dowloading segment offset=%d payload=%s last=%d',
-                         offset, ','.join('%02x' % x for x in seg_payload), last)
-            offset += len(ch)
 
             def validator(f):
                 self._make_throwing_response_validator(resp_command_specifier)(f)
@@ -227,9 +224,6 @@ class BootloaderInterface:
             toggle = not toggle
 
             cmd, payload = f['data'][0], f['data'][1:]
-
-            logger.debug('Uploaded segment offset=%d cmd=%02x payload=%s',
-                         len(output), cmd, ','.join('%02x' % x for x in payload))
 
             n = (cmd >> 1) & 0b111
             c = bool(cmd & 1)
@@ -277,8 +271,17 @@ class BootloaderInterface:
         self._download_expedited(0x5050, 2, self.RAM_BUFFER_BASE_ADDRESS, 'u32')          # RAM address
         self._download_expedited(0x5050, 3, len(data), 'u16', timeout=self.LONG_TIMEOUT)  # Size, starts the operation
 
+        # Comparing flash with RAM
+        self._download_expedited(0x5060, 1, offset, 'u32')                                # Flash address
+        self._download_expedited(0x5060, 2, self.RAM_BUFFER_BASE_ADDRESS, 'u32')          # RAM address
+        self._download_expedited(0x5060, 3, len(data), 'u16', timeout=self.LONG_TIMEOUT)  # Size, starts the operation
+
     def read(self, offset, length):
         length = (length + 3) & ~0b11
+
+        if offset < 0x200:
+            warnings.warn('Reading memory addresses under 0x200 is probably pointless, '
+                          'because it is remapped to the bootloader\'s vector table.')
 
         self._download_expedited(0x5010, 0, offset, 'u32')
         self._download_expedited(0x5011, 0, length, 'u32')
@@ -296,7 +299,7 @@ class BootloaderInterface:
             firmware = firmware_file.read()
 
         # Computing sectors
-        offset = offset or 0
+        offset = offset or self.FLASH_OFFSET
         size = len(firmware)
 
         start_sector = offset // self.FLASH_SECTOR_SIZE
@@ -317,18 +320,6 @@ class BootloaderInterface:
             self._load_block(load_offset, ch)
             image_offset += len(ch)
             load_offset += len(ch)
-
-        # Validating
-        readback = self.read(offset, size)
-
-        # with open('readback.bin', 'wb') as f:
-        #    f.write(readback)
-
-        if len(readback) < len(firmware):
-            raise Exception("Verification failed: couldn't read back enough data")
-
-        if not readback.startswith(firmware):
-            raise Exception('Verification failed: data mismatch')
 
     def read_unique_id(self):
         out = itertools.chain(*[self._upload_expedited(0x5100, x + 1)[1] for x in range(4)])
