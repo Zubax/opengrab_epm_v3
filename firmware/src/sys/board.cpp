@@ -305,10 +305,10 @@ __attribute__((optimize(0)))     // Optimization must be disabled lest it hardfa
 #endif
 void readUniqueID(UniqueID& out_uid)
 {
-    unsigned aligned_array[4] = {};  // out_uid may be unaligned, so we need to use temp array
+    unsigned aligned_array[5] = {};  // out_uid may be unaligned, so we need to use temp array
     unsigned iap_command = 58;
     reinterpret_cast<void(*)(void*, void*)>(0x1FFF1FF1)(&iap_command, aligned_array);
-    std::memcpy(out_uid.data(), aligned_array, 16);
+    std::memcpy(out_uid.data(), &aligned_array[1], 16);
 }
 
 bool tryReadDeviceSignature(DeviceSignature& out_signature)
