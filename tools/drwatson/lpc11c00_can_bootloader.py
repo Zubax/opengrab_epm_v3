@@ -307,10 +307,26 @@ class BootloaderInterface:
         for x in (start_sector, end_sector):
             assert 0 <= x <= self.MAX_FLASH_SECTOR_NUM
 
+        # Patching the firmware - see 26.3.3 of the user manual
+        if offset == 0:
+            checksum_offset = 0x1C
+            pre = firmware[:checksum_offset]
+            post = firmware[(checksum_offset + 4):]
+
+            checksum = 0
+            for vector in group_in_chunks(pre, 4):
+                checksum += struct.unpack('<I', vector)[0]
+            checksum = (~checksum + 1) & 0xFFFFFFFF
+            print(checksum)
+
+            firmware = pre + struct.pack('<I', checksum) + post
+
+            assert size == len(firmware)
+
+        # Erasing and preparing the sectors for write
         logger.info('Firmware offset %08x, size %d, sectors %d to %d',
                     offset, size, start_sector, end_sector)
 
-        # Erasing and preparing the sectors for write
         self._erase_sectors_and_prepare_for_write(start_sector, end_sector)
 
         # Loading the image at the specified offset
