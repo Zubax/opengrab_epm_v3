@@ -109,7 +109,7 @@ def make_api_context_with_user_provided_credentials():
 
         response = requests.get(_make_api_endpoint(login, password, 'balance'), timeout=REQUEST_TIMEOUT)
         if response.status_code == http_codes.UNAUTHORIZED:
-            print('Incorrect credentials')
+            print_info('Incorrect credentials')
         elif response.status_code == http_codes.OK:
             break
         else:
@@ -154,11 +154,12 @@ print_imperative = partial(_print_impl, colorama.Fore.GREEN)
 print_error = partial(_print_impl, colorama.Fore.RED)
 print_info = partial(_print_impl, colorama.Fore.WHITE)
 
-def show_color_legend():
+def show_legend():
     print('Color legend:')
-    print_imperative('\tIMPERATIVE')
-    print_error('\tERROR')
-    print_info('\tINFO')
+    print_imperative('\tFOLLOW INSTRUCTIONS IN GREEN')
+    print_error('\tERRORS ARE REPORTED IN RED')
+    print_info('\tINFO MESSAGES ARE PRINTED IN WHITE')
+    print('Press CTRL+C to exit the application')
 
 
 def request_input(fmt, *args):
@@ -183,6 +184,19 @@ def run(handler):
             logger.info('Main loop exception', exc_info=True)
 
 
+def execute_shell_command(fmt, *args, ignore_failure=False):
+    cmd = fmt % args
+    logger.debug('Executing: %r', cmd)
+    ret = os.system(cmd)
+    if ret != 0:
+        msg = 'Command exited with status %d: %r' % (ret, cmd)
+        if ignore_failure:
+            logger.info(msg)
+        else:
+            raise DrwatsonException(msg)
+    return ret
+
+
 def _make_api_endpoint(login, password, call):
     return 'https://%s:%s@%s/api/v1/%s' % (login, password, LICENSING_ENDPOINT, call)
 
@@ -204,3 +218,23 @@ def _ordinary():
     return random.random() >= 0.01
 
 
+def _init():
+    logging_level = logging.WARN
+
+    if '-v' in sys.argv:
+        sys.argv.remove('-v')
+        logging_level = logging.INFO
+
+    if '-vv' in sys.argv:
+        sys.argv.remove('-vv')
+        logging_level = logging.DEBUG
+
+    logging.basicConfig(stream=sys.stderr, level=logging_level,
+                        format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+
+    logging.getLogger('urllib3.connectionpool').setLevel('WARNING')
+
+    if os.geteuid() != 0:
+        print_error('WARNING: YOU ARE NOT ROOT')
+
+_init()

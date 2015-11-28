@@ -317,7 +317,6 @@ class BootloaderInterface:
             for vector in group_in_chunks(pre, 4):
                 checksum += struct.unpack('<I', vector)[0]
             checksum = (~checksum + 1) & 0xFFFFFFFF
-            print(checksum)
 
             firmware = pre + struct.pack('<I', checksum) + post
 
