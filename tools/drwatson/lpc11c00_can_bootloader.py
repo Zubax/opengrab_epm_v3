@@ -303,7 +303,7 @@ class BootloaderInterface:
         size = len(firmware)
 
         start_sector = offset // self.FLASH_SECTOR_SIZE
-        end_sector = (offset + size) // self.FLASH_SECTOR_SIZE
+        end_sector = (offset + size - 1) // self.FLASH_SECTOR_SIZE
         for x in (start_sector, end_sector):
             assert 0 <= x <= self.MAX_FLASH_SECTOR_NUM
 

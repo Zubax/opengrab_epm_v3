@@ -60,10 +60,6 @@ class Bus:
         self.poll = select.poll()
         self.poll.register(self.socket.fileno())
 
-    def __del__(self):
-        if self.socket.fileno() >= 0:
-            print('CAN BUS SOCKET WAS NOT CLOSED EXPLICITLY', file=sys.stderr)
-
     def _resolve_timeout_ms(self, timeout):
         if timeout is not None:
             return timeout * 1000
