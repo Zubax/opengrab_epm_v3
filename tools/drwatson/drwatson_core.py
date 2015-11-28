@@ -182,6 +182,7 @@ def run(handler):
             print_error('FAILED: %s: %s', type(ex).__name__, ex)
             logger.info('Main loop exception', exc_info=True)
 
+
 def _make_api_endpoint(login, password, call):
     return 'https://%s:%s@%s/api/v1/%s' % (login, password, LICENSING_ENDPOINT, call)
 
