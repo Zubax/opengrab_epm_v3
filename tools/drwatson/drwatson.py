@@ -3,6 +3,9 @@
 # Author: Pavel Kirienko <pavel.kirienko@zubax.com>
 #
 
+import sys
+assert sys.version[0] == '3'
+
 import requests
 import getpass
 import json
@@ -11,7 +14,10 @@ import base64
 import logging
 import http.client as http_codes
 import colorama
-import sys
+import argparse
+import threading
+import itertools
+import time
 from functools import partial
 try:
     import readline  # @UnusedImport
@@ -25,6 +31,9 @@ REQUEST_TIMEOUT = 20
 
 
 colorama.init()
+
+# Default config - can be overriden later
+logging.basicConfig(stream=sys.stderr, level=logging.WARN, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +94,7 @@ class APIContext:
 
     def verify_signature(self, unique_id, product_name, signature):
         return self._call('signature/verify', unique_id=_b64_encode(unique_id),
-                         product_name=product_name, signature=_b64_encode(signature))
+                          product_name=product_name, signature=_b64_encode(signature))
 
 
 def make_api_context_with_user_provided_credentials():
@@ -100,22 +109,30 @@ def make_api_context_with_user_provided_credentials():
 
     # Running in the loop until the user provides valid credentials
     while True:
-        print_imperative('Enter your credentials for %r', LICENSING_ENDPOINT)
+        try:
+            imperative('Enter your credentials for %r', LICENSING_ENDPOINT)
 
-        provided_login = input(('Login [%s]: ' % login) if login else 'Login: ')
-        login = provided_login or login
+            provided_login = input(('Login [%s]: ' % login) if login else 'Login: ')
+            login = provided_login or login
 
-        password = getpass.getpass('Password: ')
+            imperative('Password: ', end='')
+            password = getpass.getpass('')
+        except KeyboardInterrupt:
+            info('Exit')
+            exit()
 
-        response = requests.get(_make_api_endpoint(login, password, 'balance'), timeout=REQUEST_TIMEOUT)
+        with CLIWaitCursor():
+            response = requests.get(_make_api_endpoint(login, password, 'balance'), timeout=REQUEST_TIMEOUT)
+
         if response.status_code == http_codes.UNAUTHORIZED:
-            print_info('Incorrect credentials')
+            info('Incorrect credentials')
         elif response.status_code == http_codes.OK:
             break
         else:
             raise APIException('Unexpected HTTP code: %r' % response)
 
-    print_info('Credentials are correct' if _ordinary() else 'You are a good man, we like you')
+    if not _ordinary():
+        info('We like you')
 
     # Trying to cache the login
     try:
@@ -142,33 +159,34 @@ def download(url):
     raise DrwatsonException('Could not download %r' % url)
 
 
-def _print_impl(color, fmt, *args):
-    sys.stdout.write(colorama.Style.BRIGHT)
+def _print_impl(color, fmt, *args, end='\n'):
+    sys.stdout.write(colorama.Style.BRIGHT)  # @UndefinedVariable
     sys.stdout.write(color)
     sys.stdout.write(fmt % args)
-    sys.stdout.write('\n')
-    sys.stdout.write(colorama.Style.RESET_ALL)
+    if end:
+        sys.stdout.write(end)
+    sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
     sys.stdout.flush()
 
-print_imperative = partial(_print_impl, colorama.Fore.GREEN)
-print_error = partial(_print_impl, colorama.Fore.RED)
-print_info = partial(_print_impl, colorama.Fore.WHITE)
-
-def show_legend():
-    print('Color legend:')
-    print_imperative('\tFOLLOW INSTRUCTIONS IN GREEN')
-    print_error('\tERRORS ARE REPORTED IN RED')
-    print_info('\tINFO MESSAGES ARE PRINTED IN WHITE')
-    print('Press CTRL+C to exit the application')
+imperative = partial(_print_impl, colorama.Fore.GREEN)  # @UndefinedVariable
+error = partial(_print_impl, colorama.Fore.RED)         # @UndefinedVariable
+info = partial(_print_impl, colorama.Fore.WHITE)        # @UndefinedVariable
 
 
-def request_input(fmt, *args):
-    print_imperative(fmt, *args)
-    return input()
+_native_input = input
+
+
+def input(fmt, *args):  # @ReservedAssignment
+    sys.stdout.write(colorama.Style.BRIGHT)     # @UndefinedVariable
+    sys.stdout.write(colorama.Fore.GREEN)       # @UndefinedVariable
+    out = _native_input(fmt % args)
+    sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
+    sys.stdout.flush()
+    return out
 
 
 def fatal(fmt, *args):
-    print_error(fmt, *args)
+    error(fmt, *args)
     exit(1)
 
 
@@ -176,12 +194,17 @@ def run(handler):
     while True:
         try:
             print('=' * 80)
-            request_input('Press ENTER to begin')
+            input('Press ENTER to begin')
 
             handler()
+        except KeyboardInterrupt:
+            info('Exit')
+            break
         except Exception as ex:
-            print_error('FAILED: %s: %s', type(ex).__name__, ex)
+            error('FAILED: %s: %s', type(ex).__name__, ex)
             logger.info('Main loop exception', exc_info=True)
+        finally:
+            sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
 
 
 def execute_shell_command(fmt, *args, ignore_failure=False):
@@ -218,23 +241,58 @@ def _ordinary():
     return random.random() >= 0.01
 
 
-def _init():
-    logging_level = logging.WARN
+def init(description, *args, require_root=False):
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity level (-v, -vv)')
+    for a in args:
+        parser.add_argument(**a)
 
-    if '-v' in sys.argv:
-        sys.argv.remove('-v')
-        logging_level = logging.INFO
+    args = parser.parse_args()
 
-    if '-vv' in sys.argv:
-        sys.argv.remove('-vv')
-        logging_level = logging.DEBUG
+    logging_level = {
+        0: logging.WARN,
+        1: logging.INFO,
+        2: logging.DEBUG
+    }.get(args.verbose, logging.DEBUG)
 
-    logging.basicConfig(stream=sys.stderr, level=logging_level,
-                        format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+    for name, lg in logging.Logger.manager.loggerDict.items():  # @UndefinedVariable
+        if name.startswith('urllib'):
+            continue
+        if lg.level < logging_level:
+            lg.setLevel(logging_level)
 
-    logging.getLogger('urllib3.connectionpool').setLevel('WARNING')
+    if require_root and os.geteuid() != 0:
+        fatal('This program requires superuser priveleges')
 
-    if os.geteuid() != 0:
-        print_error('WARNING: YOU ARE NOT ROOT')
+    print('Color legend:')
+    imperative('\tFOLLOW INSTRUCTIONS IN GREEN')
+    error('\tERRORS ARE REPORTED IN RED')
+    info('\tINFO MESSAGES ARE PRINTED IN WHITE')
+    print('Press CTRL+C to exit the application')
 
-_init()
+    return args
+
+
+class CLIWaitCursor(threading.Thread):
+    """Usage:
+    with CLIWaitCursor():
+        long_operation()
+    """
+
+    def __init__(self):
+        super(CLIWaitCursor, self).__init__(name='wait_cursor_spinner', daemon=True)
+        self.spinner = itertools.cycle(['|', '/', '-', '\\'])
+        self.keep_going = True
+
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, _type, _value, _traceback):
+        self.keep_going = False
+        self.join()
+
+    def run(self):
+        while self.keep_going:
+            sys.stdout.write(next(self.spinner) + '\033[1D')
+            sys.stdout.flush()
+            time.sleep(0.1)
