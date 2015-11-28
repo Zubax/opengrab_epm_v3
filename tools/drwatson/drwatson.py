@@ -197,6 +197,8 @@ def run(handler):
             input('Press ENTER to begin')
 
             handler()
+
+            info('Completed successfully')
         except KeyboardInterrupt:
             info('Exit')
             break

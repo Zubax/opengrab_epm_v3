@@ -25,8 +25,8 @@ with CLIWaitCursor():
     firmware_base = drwatson.download('https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin')
     assert len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware too large'
 
-    drwatson.execute_shell_command('ip link set %s up type can bitrate 100000 sample-point 0.875',
-                                   args.iface, ignore_failure=True)
+    drwatson.execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
+                                   args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)
 
 
 def process_one_device():
@@ -51,7 +51,7 @@ def process_one_device():
             bli.unlock()
             bli.load_firmware(firmware_with_signature)
 
-        input('Set PIO0_3 high, PIO0_1 high, then press enter')
+        input('Set PIO0_3 high, PIO0_1 high, then press ENTER')
 
         info('Starting the firmware...')
         bli.reset()
@@ -59,8 +59,6 @@ def process_one_device():
     input('\n'.join(['1. Make sure that LED indicators are blinking',
                      '2. Test button operation',
                      '3. Press ENTER']))
-
-    imperative('Done! Go get a cookie.')
 
 
 drwatson.run(process_one_device)

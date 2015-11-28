@@ -15,6 +15,9 @@ from contextlib import closing
 from enum import IntEnum
 
 
+CAN_BITRATE = 100000                        # Required by LPC11
+
+
 logger = logging.getLogger(__name__)
 
 
