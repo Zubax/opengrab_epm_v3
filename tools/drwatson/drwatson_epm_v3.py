@@ -4,33 +4,36 @@
 # Author: Pavel Kirienko <pavel.kirienko@zubax.com>
 #
 
-import drwatson
+from drwatson import init, run, make_api_context_with_user_provided_credentials, execute_shell_command,\
+    info, input, CLIWaitCursor, download
 import lpc11c00_can_bootloader
-from drwatson import imperative, info, input, CLIWaitCursor
 from contextlib import closing
 
 PRODUCT_NAME = 'com.zubax.opengrab_epm_v3'
 SIGNATURE_OFFSET = 32768 - 128
 
 
-args = drwatson.init('''OpenGrab EPM v3 production testing application.
-This application requires superuser priveleges to function correctly.''',
-                     dict(dest='iface', help='CAN interface name, e.g. "can0"'),
-                     require_root=True)
+args = init('''OpenGrab EPM v3 production testing application.
+This application requires superuser priveleges to function correctly.
+Usage instructions:
+    1. Connect CAN adapter to this computer.
+    2. Start this application and follow its instructions.''',
+            dict(dest='iface', help='CAN interface name, e.g. "can0"'),
+            require_root=True)
 
 
-api = drwatson.make_api_context_with_user_provided_credentials()
+api = make_api_context_with_user_provided_credentials()
 
 with CLIWaitCursor():
-    firmware_base = drwatson.download('https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin')
+    firmware_base = download('https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin')
     assert len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware too large'
 
-    drwatson.execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
-                                   args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)
+    execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
+                          args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)
 
 
 def process_one_device():
-    drwatson.execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
+    execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
     with closing(lpc11c00_can_bootloader.BootloaderInterface(args.iface)) as bli:
         input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low',
@@ -61,4 +64,4 @@ def process_one_device():
                      '3. Press ENTER']))
 
 
-drwatson.run(process_one_device)
+run(process_one_device)
