@@ -152,7 +152,7 @@ uavcan::NodeID performDynamicNodeIDAllocation()
 
 void fillNodeInfo()
 {
-    getNode().setName("com.zubax.opengrab_epm");
+    getNode().setName("com.zubax.opengrab_epm_v3");
 
     {
         uavcan::protocol::SoftwareVersion swver;
