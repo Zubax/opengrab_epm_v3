@@ -122,7 +122,13 @@ def make_api_context_with_user_provided_credentials():
             exit()
 
         with CLIWaitCursor():
-            response = requests.get(_make_api_endpoint(login, password, 'balance'), timeout=REQUEST_TIMEOUT)
+            try:
+                response = requests.get(_make_api_endpoint(login, password, 'balance'), timeout=REQUEST_TIMEOUT)
+            except Exception as ex:
+                logger.info('Request failed with error: %r', ex, exc_info=True)
+                error('Could not reach the server, please check your Internet connection.')
+                info('Error info: %r', ex)
+                continue
 
         if response.status_code == http_codes.UNAUTHORIZED:
             info('Incorrect credentials')
@@ -203,8 +209,8 @@ def run(handler):
             info('Exit')
             break
         except Exception as ex:
-            error('FAILED: %s: %s', type(ex).__name__, ex)
-            logger.info('Main loop exception', exc_info=True)
+            logger.info('Main loop error: %r', ex, exc_info=True)
+            error('FAILURE: %r', ex)
         finally:
             sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
 
@@ -216,7 +222,7 @@ def execute_shell_command(fmt, *args, ignore_failure=False):
     if ret != 0:
         msg = 'Command exited with status %d: %r' % (ret, cmd)
         if ignore_failure:
-            logger.info(msg)
+            logger.debug(msg)
         else:
             raise DrwatsonException(msg)
     return ret
@@ -266,11 +272,11 @@ def init(description, *args, require_root=False):
     if require_root and os.geteuid() != 0:
         fatal('This program requires superuser priveleges')
 
-    print('Color legend:')
+    info('Color legend:')
     imperative('\tFOLLOW INSTRUCTIONS IN GREEN')
     error('\tERRORS ARE REPORTED IN RED')
     info('\tINFO MESSAGES ARE PRINTED IN WHITE')
-    print('Press CTRL+C to exit the application')
+    info('Press CTRL+C to exit the application')
 
     return args
 
