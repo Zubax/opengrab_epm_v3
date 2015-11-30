@@ -182,18 +182,38 @@ info = partial(_print_impl, colorama.Fore.WHITE)        # @UndefinedVariable
 _native_input = input
 
 
-def input(fmt, *args):  # @ReservedAssignment
-    sys.stdout.write(colorama.Style.BRIGHT)     # @UndefinedVariable
-    sys.stdout.write(colorama.Fore.GREEN)       # @UndefinedVariable
-    out = _native_input(fmt % args)
-    sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
-    sys.stdout.flush()
-    return out
+def input(fmt, *args, yes_no=False):            # @ReservedAssignment
+    with CLIWaitCursorSuppressor():
+        text = fmt % args
+        if yes_no:
+            text = text.rstrip() + ' (y/N) '
+
+        sys.stdout.write(colorama.Style.BRIGHT)     # @UndefinedVariable
+        sys.stdout.write(colorama.Fore.GREEN)       # @UndefinedVariable
+
+        out = _native_input(text)
+        sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
+        sys.stdout.flush()
+
+        if yes_no:
+            out = (out[0].lower() == 'y') if out else False
+            info('Answered %s', 'YES' if out else 'NO')
+            return out
+        else:
+            return out
 
 
 def fatal(fmt, *args):
     error(fmt, *args)
     exit(1)
+
+
+class AbortException(DrwatsonException):
+    pass
+
+
+def abort(reason):
+    raise AbortException(str(reason))
 
 
 def run(handler):
@@ -208,6 +228,8 @@ def run(handler):
         except KeyboardInterrupt:
             info('Exit')
             break
+        except AbortException as ex:
+            error('ABORTED: %s', str(ex))
         except Exception as ex:
             logger.info('Main loop error: %r', ex, exc_info=True)
             error('FAILURE: %r', ex)
@@ -287,6 +309,8 @@ class CLIWaitCursor(threading.Thread):
         long_operation()
     """
 
+    SUPPRESSED = 0
+
     def __init__(self):
         super(CLIWaitCursor, self).__init__(name='wait_cursor_spinner', daemon=True)
         self.spinner = itertools.cycle(['|', '/', '-', '\\'])
@@ -301,6 +325,15 @@ class CLIWaitCursor(threading.Thread):
 
     def run(self):
         while self.keep_going:
-            sys.stdout.write(next(self.spinner) + '\033[1D')
-            sys.stdout.flush()
+            if CLIWaitCursor.SUPPRESSED <= 0:
+                sys.stdout.write(next(self.spinner) + '\033[1D')
+                sys.stdout.flush()
             time.sleep(0.1)
+
+
+class CLIWaitCursorSuppressor:
+    def __enter__(self):
+        CLIWaitCursor.SUPPRESSED += 1
+
+    def __exit__(self, _type, _value, _traceback):
+        CLIWaitCursor.SUPPRESSED -= 1

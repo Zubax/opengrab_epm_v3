@@ -5,7 +5,7 @@
 #
 
 from drwatson import init, run, make_api_context_with_user_provided_credentials, execute_shell_command,\
-    info, input, CLIWaitCursor, download
+    info, error, input, CLIWaitCursor, download, abort
 import lpc11c00_can_bootloader
 from contextlib import closing
 
@@ -51,9 +51,17 @@ def process_one_device():
                  ['existing', 'NEW'][gensign_response.new])
             firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + gensign_response.signature
 
-            info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
-            bli.unlock()
-            bli.load_firmware(firmware_with_signature)
+            while True:
+                try:
+                    info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
+                    bli.unlock()
+                    bli.load_firmware(firmware_with_signature)
+                except Exception as ex:
+                    error('Flashing failed: %r', ex)
+                    if not input('Try harder?', yes_no=True):
+                        abort('Flashing failed')
+                else:
+                    break
 
         input('Set PIO0_1 high (J4 open), then press ENTER')
 
