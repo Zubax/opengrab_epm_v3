@@ -156,7 +156,7 @@ def make_api_context_with_user_provided_credentials():
 
 
 def download(url):
-    r = requests.get(url, stream=True)
+    r = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
     if r.status_code == 200:
         r.raw.decode_content = True
         data = r.raw.read()
