@@ -45,10 +45,11 @@ def process_one_device():
             unique_id = bli.read_unique_id()
 
             info('Requesting signature for unique ID %s', ' '.join(['%02x' % x for x in unique_id]))
-            signature = api.generate_signature(unique_id, PRODUCT_NAME).signature
+            gensign_response = api.generate_signature(unique_id, PRODUCT_NAME)
 
-            info('Signature has been generated successfully [%d bytes], patching the firware...', len(signature))
-            firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + signature
+            info('Signature has been generated successfully [%s], patching the firmware...',
+                 ['existing', 'NEW'][gensign_response.new])
+            firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + gensign_response.signature
 
             info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
             bli.unlock()
