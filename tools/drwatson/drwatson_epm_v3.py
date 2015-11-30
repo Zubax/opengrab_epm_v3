@@ -36,7 +36,7 @@ def process_one_device():
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
     with closing(lpc11c00_can_bootloader.BootloaderInterface(args.iface)) as bli:
-        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low',
+        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
                          '2. Connect the device to CAN bus',
                          '3. Press ENTER']))
 
@@ -55,7 +55,7 @@ def process_one_device():
             bli.unlock()
             bli.load_firmware(firmware_with_signature)
 
-        input('Set PIO0_3 high, PIO0_1 high, then press ENTER')
+        input('Set PIO0_1 high (J4 open), then press ENTER')
 
         info('Starting the firmware...')
         bli.reset()
