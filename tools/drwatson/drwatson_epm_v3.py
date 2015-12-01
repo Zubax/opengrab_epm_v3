@@ -5,12 +5,13 @@
 #
 
 from drwatson import init, run, make_api_context_with_user_provided_credentials, execute_shell_command,\
-    info, input, CLIWaitCursor, download
+    info, error, input, CLIWaitCursor, download, abort
 import lpc11c00_can_bootloader
 from contextlib import closing
 
 PRODUCT_NAME = 'com.zubax.opengrab_epm_v3'
 SIGNATURE_OFFSET = 32768 - 128
+FIRMWARE_URL = 'https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin'
 
 
 args = init('''OpenGrab EPM v3 production testing application.
@@ -18,15 +19,15 @@ This application requires superuser priveleges to function correctly.
 Usage instructions:
     1. Connect CAN adapter to this computer.
     2. Start this application and follow its instructions.''',
-            dict(dest='iface', help='CAN interface name, e.g. "can0"'),
+            lambda p: p.add_argument('iface', help='CAN interface name, e.g. "can0"'),
+            lambda p: p.add_argument('--firmware', '-f', help='location of the firmware file', default=FIRMWARE_URL),
             require_root=True)
-
 
 api = make_api_context_with_user_provided_credentials()
 
 with CLIWaitCursor():
-    firmware_base = download('https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin')
-    assert len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware too large'
+    firmware_base = download(args.firmware)
+    assert 0 < len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware size is incorrect'
 
     execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
                           args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)
@@ -36,7 +37,7 @@ def process_one_device():
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
     with closing(lpc11c00_can_bootloader.BootloaderInterface(args.iface)) as bli:
-        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low',
+        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
                          '2. Connect the device to CAN bus',
                          '3. Press ENTER']))
 
@@ -45,16 +46,25 @@ def process_one_device():
             unique_id = bli.read_unique_id()
 
             info('Requesting signature for unique ID %s', ' '.join(['%02x' % x for x in unique_id]))
-            signature = api.generate_signature(unique_id, PRODUCT_NAME).signature
+            gensign_response = api.generate_signature(unique_id, PRODUCT_NAME)
 
-            info('Signature has been generated successfully [%d bytes], patching the firware...', len(signature))
-            firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + signature
+            info('Signature has been generated successfully [%s], patching the firmware...',
+                 ['existing', 'NEW'][gensign_response.new])
+            firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + gensign_response.signature
 
-            info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
-            bli.unlock()
-            bli.load_firmware(firmware_with_signature)
+            while True:
+                try:
+                    info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
+                    bli.unlock()
+                    bli.load_firmware(firmware_with_signature)
+                except Exception as ex:
+                    error('Flashing failed: %r', ex)
+                    if not input('Try harder?', yes_no=True):
+                        abort('Flashing failed')
+                else:
+                    break
 
-        input('Set PIO0_3 high, PIO0_1 high, then press ENTER')
+        input('Set PIO0_1 high (J4 open), then press ENTER')
 
         info('Starting the firmware...')
         bli.reset()

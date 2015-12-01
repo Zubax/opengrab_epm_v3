@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 
-LICENSING_ENDPOINT = os.environ.get('ZUBAX_LICENSING_ENDPOINT', 'licensing.zubax.com')
+DEFAULT_SERVER = 'licensing.zubax.com'
 APP_DATA_PATH = os.path.join(os.path.expanduser("~"), '.zubax', 'drwatson')
 REQUEST_TIMEOUT = 20
 
@@ -36,6 +36,8 @@ colorama.init()
 logging.basicConfig(stream=sys.stderr, level=logging.WARN, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
 logger = logging.getLogger(__name__)
+
+server = DEFAULT_SERVER
 
 
 class DrwatsonException(Exception):
@@ -110,7 +112,7 @@ def make_api_context_with_user_provided_credentials():
     # Running in the loop until the user provides valid credentials
     while True:
         try:
-            imperative('Enter your credentials for %r', LICENSING_ENDPOINT)
+            imperative('Enter your credentials for %r', server)
 
             provided_login = input(('Login [%s]: ' % login) if login else 'Login: ')
             login = provided_login or login
@@ -155,14 +157,23 @@ def make_api_context_with_user_provided_credentials():
     return APIContext(login, password)
 
 
-def download(url):
-    r = requests.get(url, stream=True)
-    if r.status_code == 200:
-        r.raw.decode_content = True
-        data = r.raw.read()
-        logging.info('Downloaded %d bytes from %r', len(data), url)
-        return data
-    raise DrwatsonException('Could not download %r' % url)
+def download(url, encoding=None):
+    logger.debug('Downloading %r', url)
+
+    def decode(data):
+        return data.decode(encoding) if encoding else data
+
+    if '://' in url[:10]:
+        r = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
+        if r.status_code == 200:
+            r.raw.decode_content = True
+            data = r.raw.read()
+            logging.info('Downloaded %d bytes from %r', len(data), url)
+            return decode(data)
+        raise DrwatsonException('Could not download %r: %r' % (url, r))
+    else:
+        with open(url, 'rb') as f:
+            return decode(f.read())
 
 
 def _print_impl(color, fmt, *args, end='\n'):
@@ -182,18 +193,38 @@ info = partial(_print_impl, colorama.Fore.WHITE)        # @UndefinedVariable
 _native_input = input
 
 
-def input(fmt, *args):  # @ReservedAssignment
-    sys.stdout.write(colorama.Style.BRIGHT)     # @UndefinedVariable
-    sys.stdout.write(colorama.Fore.GREEN)       # @UndefinedVariable
-    out = _native_input(fmt % args)
-    sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
-    sys.stdout.flush()
-    return out
+def input(fmt, *args, yes_no=False):            # @ReservedAssignment
+    with CLIWaitCursorSuppressor():
+        text = fmt % args
+        if yes_no:
+            text = text.rstrip() + ' (y/N) '
+
+        sys.stdout.write(colorama.Style.BRIGHT)     # @UndefinedVariable
+        sys.stdout.write(colorama.Fore.GREEN)       # @UndefinedVariable
+
+        out = _native_input(text)
+        sys.stdout.write(colorama.Style.RESET_ALL)  # @UndefinedVariable
+        sys.stdout.flush()
+
+        if yes_no:
+            out = (out[0].lower() == 'y') if out else False
+            info('Answered %s', 'YES' if out else 'NO')
+            return out
+        else:
+            return out
 
 
 def fatal(fmt, *args):
     error(fmt, *args)
     exit(1)
+
+
+class AbortException(DrwatsonException):
+    pass
+
+
+def abort(reason):
+    raise AbortException(str(reason))
 
 
 def run(handler):
@@ -208,6 +239,8 @@ def run(handler):
         except KeyboardInterrupt:
             info('Exit')
             break
+        except AbortException as ex:
+            error('ABORTED: %s', str(ex))
         except Exception as ex:
             logger.info('Main loop error: %r', ex, exc_info=True)
             error('FAILURE: %r', ex)
@@ -229,7 +262,12 @@ def execute_shell_command(fmt, *args, ignore_failure=False):
 
 
 def _make_api_endpoint(login, password, call):
-    return 'https://%s:%s@%s/api/v1/%s' % (login, password, LICENSING_ENDPOINT, call)
+    local = server.lower().strip().split(':')[0] in ['0.0.0.0', '127.0.0.1', 'localhost']
+    protocol = 'http' if local else 'https'
+    endpoint = '%s://%s:%s@%s/api/v1/%s' % (protocol, login, password, server, call)
+    if not endpoint.startswith('https'):
+        logger.warning('USING INSECURE PROTOCOL')
+    return endpoint
 
 
 def _b64_encode(x):
@@ -249,13 +287,20 @@ def _ordinary():
     return random.random() >= 0.01
 
 
-def init(description, *args, require_root=False):
-    parser = argparse.ArgumentParser(description=description)
+def init(description, *arg_initializers, require_root=False):
+    parser = argparse.ArgumentParser(description=description,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    for ai in arg_initializers:
+        ai(parser)
+
     parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity level (-v, -vv)')
-    for a in args:
-        parser.add_argument(**a)
+    parser.add_argument('--server', '-s', default=DEFAULT_SERVER, help='licensing server')
 
     args = parser.parse_args()
+
+    global server
+    server = args.server
 
     logging_level = {
         0: logging.WARN,
@@ -287,6 +332,8 @@ class CLIWaitCursor(threading.Thread):
         long_operation()
     """
 
+    SUPPRESSED = 0
+
     def __init__(self):
         super(CLIWaitCursor, self).__init__(name='wait_cursor_spinner', daemon=True)
         self.spinner = itertools.cycle(['|', '/', '-', '\\'])
@@ -301,6 +348,15 @@ class CLIWaitCursor(threading.Thread):
 
     def run(self):
         while self.keep_going:
-            sys.stdout.write(next(self.spinner) + '\033[1D')
-            sys.stdout.flush()
+            if CLIWaitCursor.SUPPRESSED <= 0:
+                sys.stdout.write(next(self.spinner) + '\033[1D')
+                sys.stdout.flush()
             time.sleep(0.1)
+
+
+class CLIWaitCursorSuppressor:
+    def __enter__(self):
+        CLIWaitCursor.SUPPRESSED += 1
+
+    def __exit__(self, _type, _value, _traceback):
+        CLIWaitCursor.SUPPRESSED -= 1
