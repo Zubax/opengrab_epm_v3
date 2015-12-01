@@ -11,6 +11,7 @@ from contextlib import closing
 
 PRODUCT_NAME = 'com.zubax.opengrab_epm_v3'
 SIGNATURE_OFFSET = 32768 - 128
+FIRMWARE_URL = 'https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin'
 
 
 args = init('''OpenGrab EPM v3 production testing application.
@@ -18,15 +19,15 @@ This application requires superuser priveleges to function correctly.
 Usage instructions:
     1. Connect CAN adapter to this computer.
     2. Start this application and follow its instructions.''',
-            dict(dest='iface', help='CAN interface name, e.g. "can0"'),
+            lambda p: p.add_argument('iface', help='CAN interface name, e.g. "can0"'),
+            lambda p: p.add_argument('--firmware', '-f', help='location of the firmware file', default=FIRMWARE_URL),
             require_root=True)
-
 
 api = make_api_context_with_user_provided_credentials()
 
 with CLIWaitCursor():
-    firmware_base = download('https://files.zubax.com/products/com.zubax.opengrab_epm_v3/firmware.bin')
-    assert len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware too large'
+    firmware_base = download(args.firmware)
+    assert 0 < len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware size is incorrect'
 
     execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
                           args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)

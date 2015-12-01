@@ -155,14 +155,23 @@ def make_api_context_with_user_provided_credentials():
     return APIContext(login, password)
 
 
-def download(url):
-    r = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
-    if r.status_code == 200:
-        r.raw.decode_content = True
-        data = r.raw.read()
-        logging.info('Downloaded %d bytes from %r', len(data), url)
-        return data
-    raise DrwatsonException('Could not download %r' % url)
+def download(url, encoding=None):
+    logger.debug('Downloading %r', url)
+
+    def decode(data):
+        return data.decode(encoding) if encoding else data
+
+    if '://' in url[:10]:
+        r = requests.get(url, stream=True, timeout=REQUEST_TIMEOUT)
+        if r.status_code == 200:
+            r.raw.decode_content = True
+            data = r.raw.read()
+            logging.info('Downloaded %d bytes from %r', len(data), url)
+            return decode(data)
+        raise DrwatsonException('Could not download %r: %r' % (url, r))
+    else:
+        with open(url, 'rb') as f:
+            return decode(f.read())
 
 
 def _print_impl(color, fmt, *args, end='\n'):
@@ -271,11 +280,12 @@ def _ordinary():
     return random.random() >= 0.01
 
 
-def init(description, *args, require_root=False):
-    parser = argparse.ArgumentParser(description=description)
+def init(description, *arg_initializers, require_root=False):
+    parser = argparse.ArgumentParser(description=description,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    for ai in arg_initializers:
+        ai(parser)
     parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity level (-v, -vv)')
-    for a in args:
-        parser.add_argument(**a)
 
     args = parser.parse_args()
 
