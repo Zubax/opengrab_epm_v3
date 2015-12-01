@@ -26,14 +26,12 @@
 namespace charger
 {
 
-//unsigned counter =0;          // enable Debug output
 Charger::Charger(unsigned target_output_voltage) :
     target_output_voltage_(target_output_voltage)
 { }
 
 Charger::Status Charger::runAndGetStatus()
 {
-    //counter ++;               // enable Debug output
     /*
      * This is Plan A, run the flyback dynamicly
      * On time is 10000/(Vin-0.5V) [us, mV]
@@ -60,15 +58,13 @@ Charger::Status Charger::runAndGetStatus()
      * Error checks
      */
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-    const auto ouput_voltage_V   = board::getOutVoltageInVolts();
 
-
-    if (supply_voltage_mV < 7000)
+    if (supply_voltage_mV < 4300)
     {
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
-    if (supply_voltage_mV > 15000)
+    if (supply_voltage_mV > 6700)
     {
         addErrorFlags(ErrorFlagInputVoltageTooHigh);
     }
@@ -98,49 +94,32 @@ Charger::Status Charger::runAndGetStatus()
      * Should be exact for a linear inductor.
      * We are pushing the core right up to saturation so it's not exact science.
      */
+    const unsigned on_time = (((11000000 / (supply_voltage_mV - 500)) - 42) / 104);
 
-  
-    unsigned on_time_ns  =  15000000 / (supply_voltage_mV - 500); 
-    unsigned off_time_ns = (15000000 / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1) * 50;
+    /*
+     * Pretty close to optimal
+     */
+    unsigned off_time = ((10000000 / (supply_voltage_mV - 500)) / (board::getOutVoltageInVolts() + 1)) * 50;
 
-    unsigned on_time_cy = (on_time_ns - 42) / 104;
-    unsigned off_time_cy = 0;
-    
-    off_time_ns += 300;         // magic number
-    if (off_time_ns > 360)      // Prevent overflow
+    if (off_time > 360)     // Prevent overflow
     {
-        off_time_cy  = (off_time_ns - 250) / 104;
+        off_time = (off_time - 250) / 104;
     }
     else
     {
-        off_time_cy  = 1;       // We could posible shave off 30ms from the charge time if we had more resolution
+        off_time = 1;       // We could posible shave off 30ms from the charge time if we had more resolution
     }
 
     // When output_voltage is relaly low off time is to long
-    if (off_time_cy > 120)
+    if (off_time > 120)
     {
-        off_time_cy = 120;
+        off_time = 120;
     }
-
-    /* Debuging output
-       
-    if ((counter % 100) == 0)
-    {
-        board::syslog("           Vout = ",ouput_voltage_V,   "\r\n");
-        board::syslog("            Vin = ",supply_voltage_mV, "\r\n");
-        board::syslog("     on_time ns = ",on_time_ns,        "\r\n");
-        board::syslog("    off_time ns = ",off_time_ns,       "\r\n");
-        board::syslog(" on_time cycles = " ,on_time_cy,       "\r\n");
-        board::syslog("off_time cycles = ",off_time_cy,       "\r\n");
-    }
-    */
-  
-
 
     // Sanity check and run a few cycles
-    if (on_time_cy > 0 && on_time_cy < 30)
+    if (on_time > 0 && on_time < 30)
     {
-        board::runPump(50, on_time_cy, off_time_cy);
+        board::runPump(50, on_time, off_time);
     }
 
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
