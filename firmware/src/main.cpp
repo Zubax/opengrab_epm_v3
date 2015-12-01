@@ -284,6 +284,10 @@ void publishHardpointStatus()
     uavcan::equipment::hardpoint::Status msg;
 
     msg.hardpoint_id = getHwConfig().hardpoint_id;
+
+    msg.payload_weight = std::numeric_limits<float>::quiet_NaN();
+    msg.payload_weight_variance = std::numeric_limits<float>::infinity();
+
     msg.status = magnet::isTurnedOn() ? 1 : 0;
 
     (void)pub.broadcast(msg);
