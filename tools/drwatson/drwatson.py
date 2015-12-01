@@ -25,7 +25,7 @@ except ImportError:
     pass
 
 
-LICENSING_ENDPOINT = os.environ.get('ZUBAX_LICENSING_ENDPOINT', 'licensing.zubax.com')
+DEFAULT_SERVER = 'licensing.zubax.com'
 APP_DATA_PATH = os.path.join(os.path.expanduser("~"), '.zubax', 'drwatson')
 REQUEST_TIMEOUT = 20
 
@@ -36,6 +36,8 @@ colorama.init()
 logging.basicConfig(stream=sys.stderr, level=logging.WARN, format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
 logger = logging.getLogger(__name__)
+
+server = DEFAULT_SERVER
 
 
 class DrwatsonException(Exception):
@@ -110,7 +112,7 @@ def make_api_context_with_user_provided_credentials():
     # Running in the loop until the user provides valid credentials
     while True:
         try:
-            imperative('Enter your credentials for %r', LICENSING_ENDPOINT)
+            imperative('Enter your credentials for %r', server)
 
             provided_login = input(('Login [%s]: ' % login) if login else 'Login: ')
             login = provided_login or login
@@ -260,7 +262,12 @@ def execute_shell_command(fmt, *args, ignore_failure=False):
 
 
 def _make_api_endpoint(login, password, call):
-    return 'https://%s:%s@%s/api/v1/%s' % (login, password, LICENSING_ENDPOINT, call)
+    local = server.lower().strip().split(':')[0] in ['0.0.0.0', '127.0.0.1', 'localhost']
+    protocol = 'http' if local else 'https'
+    endpoint = '%s://%s:%s@%s/api/v1/%s' % (protocol, login, password, server, call)
+    if not endpoint.startswith('https'):
+        logger.warning('USING INSECURE PROTOCOL')
+    return endpoint
 
 
 def _b64_encode(x):
@@ -283,11 +290,17 @@ def _ordinary():
 def init(description, *arg_initializers, require_root=False):
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     for ai in arg_initializers:
         ai(parser)
+
     parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity level (-v, -vv)')
+    parser.add_argument('--server', '-s', default=DEFAULT_SERVER, help='licensing server')
 
     args = parser.parse_args()
+
+    global server
+    server = args.server
 
     logging_level = {
         0: logging.WARN,
