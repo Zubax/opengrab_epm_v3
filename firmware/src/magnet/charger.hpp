@@ -28,7 +28,7 @@ namespace charger
 
 class Charger
 {
-    const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(1000);
+    const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(3000);
 
     unsigned target_output_voltage_ = 0;
     std::uint8_t error_flags_ = 0;
