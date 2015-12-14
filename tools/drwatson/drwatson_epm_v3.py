@@ -33,12 +33,45 @@ with CLIWaitCursor():
                           args.iface, args.iface, bootloader.CAN_BITRATE, ignore_failure=True)
 
 
+def load_and_start_firmware(bootloader_interface, firmware_image):
+    while True:
+        try:
+            info('Flashing the firmware [%d bytes]...', len(firmware_image))
+            bootloader_interface.unlock()
+            bootloader_interface.load_firmware(firmware_image)
+        except Exception as ex:
+            error('Flashing failed: %r', ex)
+            if not input('Try harder?', yes_no=True):
+                abort('Flashing failed')
+        else:
+            input('Set PIO0_1 high (J4 open), then press ENTER')
+            info('Starting the firmware...')
+            bootloader_interface.reset()
+            break
+
+
 def process_one_device():
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
+    # Flashing firmware without signature
     with closing(bootloader.BootloaderInterface(args.iface)) as bli:
         input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
-                         '2. Connect the device to CAN bus',
+                         '2. Power on the device and connect it to CAN bus',
+                         '3. Press ENTER']))
+
+        with CLIWaitCursor():
+            load_and_start_firmware(bli, firmware_base)
+
+    # Testing the device
+    input('\n'.join(['1. Make sure that LED indicators are blinking',
+                     '2. Test button operation',
+                     '3. Press ENTER']))
+
+    # Installing signature
+    with closing(bootloader.BootloaderInterface(args.iface)) as bli:
+        info("Now we're going to sign the device")
+        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
+                         '2. Reset the device (e.g. cycle power)',
                          '3. Press ENTER']))
 
         with CLIWaitCursor():
@@ -52,26 +85,7 @@ def process_one_device():
                  ['existing', 'NEW'][gensign_response.new])
             firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + gensign_response.signature
 
-            while True:
-                try:
-                    info('Flashing the firmware [%d bytes]...', len(firmware_with_signature))
-                    bli.unlock()
-                    bli.load_firmware(firmware_with_signature)
-                except Exception as ex:
-                    error('Flashing failed: %r', ex)
-                    if not input('Try harder?', yes_no=True):
-                        abort('Flashing failed')
-                else:
-                    break
-
-        input('Set PIO0_1 high (J4 open), then press ENTER')
-
-        info('Starting the firmware...')
-        bli.reset()
-
-    input('\n'.join(['1. Make sure that LED indicators are blinking',
-                     '2. Test button operation',
-                     '3. Press ENTER']))
+            load_and_start_firmware(bli, firmware_with_signature)
 
 
 run(process_one_device)

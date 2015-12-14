@@ -22,4 +22,5 @@ __pycache__
 dsdlc_generated
 
 # temp files
-.swp
+*.swp
+*.log
