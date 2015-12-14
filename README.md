@@ -72,21 +72,22 @@ compatible with most ARM Cortex based designs and in particular with hardware ma
 In order to flash the board using this tool, simply connect the debugger and execute the script
 `blackmagic_flash.sh`.
 
-### Via 8devices USB2CAN and embedded CAN bootloader
+### Via [8devices USB2CAN](http://www.8devices.com/usb2can) and embedded CAN bootloader
 
-[8devices USB2CAN] (http://www.8devices.com/usb2can)
+Note to Windows users: In order to use USB2CAN in a VM the drivers have to be installed on the host and driver
+signature enforcement has to be disabled in some versions of Windows.
 
-Note: In oder to use USB2CAN in a VM the drivers have to be installed on the host and driver signature enforcement has to be disabled in some versions of Windows
+Register the CAN interface with SocketCAN:
 
-Register the iface
 ```bash
 sudo ip link set can0 up type can bitrate 100000 sample-point 0.875
 ```
-Uploading binary using LPC11 embedded CAN bootloader
+
+Uploading binary using LPC11 embedded CAN bootloader:
+
 ```bash
 tools/drwatson/lpc11c00_can_bootloader.py can0 firmware/build/firmware.bin
 ```
-
 
 ## Licenses
 
