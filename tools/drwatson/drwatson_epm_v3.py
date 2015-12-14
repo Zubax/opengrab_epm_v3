@@ -6,7 +6,7 @@
 
 from drwatson import init, run, make_api_context_with_user_provided_credentials, execute_shell_command,\
     info, error, input, CLIWaitCursor, download, abort
-import lpc11c00_can_bootloader
+from drwatson import lpc11c00_can_bootloader as bootloader
 from contextlib import closing
 
 PRODUCT_NAME = 'com.zubax.opengrab_epm_v3'
@@ -30,13 +30,13 @@ with CLIWaitCursor():
     assert 0 < len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware size is incorrect'
 
     execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
-                          args.iface, args.iface, lpc11c00_can_bootloader.CAN_BITRATE, ignore_failure=True)
+                          args.iface, args.iface, bootloader.CAN_BITRATE, ignore_failure=True)
 
 
 def process_one_device():
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
-    with closing(lpc11c00_can_bootloader.BootloaderInterface(args.iface)) as bli:
+    with closing(bootloader.BootloaderInterface(args.iface)) as bli:
         input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
                          '2. Connect the device to CAN bus',
                          '3. Press ENTER']))
