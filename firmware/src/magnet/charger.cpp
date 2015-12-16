@@ -94,7 +94,7 @@ Charger::Status Charger::runAndGetStatus()
      * Should be exact for a linear inductor.
      * We are pushing the core right up to saturation so it's not exact science.
      */
-    const unsigned on_time = (((11000000 / (supply_voltage_mV - 500)) - 42) / 104);
+    const unsigned on_time = (((12000000 / (supply_voltage_mV - 500)) - 42) / 104);
 
     /*
      * Pretty close to optimal
