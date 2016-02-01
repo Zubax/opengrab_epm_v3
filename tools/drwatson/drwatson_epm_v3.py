@@ -21,6 +21,8 @@ Usage instructions:
     2. Start this application and follow its instructions.''',
             lambda p: p.add_argument('iface', help='CAN interface name, e.g. "can0"'),
             lambda p: p.add_argument('--firmware', '-f', help='location of the firmware file', default=FIRMWARE_URL),
+            lambda p: p.add_argument('--only-sign', help='skip testing, only install signature',
+                                     action='store_true'),
             require_root=True)
 
 api = make_api_context_with_user_provided_credentials()
@@ -53,19 +55,20 @@ def load_and_start_firmware(bootloader_interface, firmware_image):
 def process_one_device():
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
-    # Flashing firmware without signature
-    with closing(bootloader.BootloaderInterface(args.iface)) as bli:
-        input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
-                         '2. Power on the device and connect it to CAN bus',
+    if not args.only_sign:
+        # Flashing firmware without signature
+        with closing(bootloader.BootloaderInterface(args.iface)) as bli:
+            input('\n'.join(['1. Set PIO0_3 low, PIO0_1 low (J4 closed, J3 open)',
+                             '2. Power on the device and connect it to CAN bus',
+                             '3. Press ENTER']))
+
+            with CLIWaitCursor():
+                load_and_start_firmware(bli, firmware_base)
+
+        # Testing the device
+        input('\n'.join(['1. Make sure that LED indicators are blinking',
+                         '2. Test button operation',
                          '3. Press ENTER']))
-
-        with CLIWaitCursor():
-            load_and_start_firmware(bli, firmware_base)
-
-    # Testing the device
-    input('\n'.join(['1. Make sure that LED indicators are blinking',
-                     '2. Test button operation',
-                     '3. Press ENTER']))
 
     # Installing signature
     with closing(bootloader.BootloaderInterface(args.iface)) as bli:
