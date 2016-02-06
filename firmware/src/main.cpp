@@ -27,7 +27,7 @@
 #include <uavcan/equipment/hardpoint/Status.hpp>
 #include <uavcan/protocol/dynamic_node_id_client.hpp>
 #include <magnet/magnet.hpp>
-
+#include <config.h>
 namespace
 {
 

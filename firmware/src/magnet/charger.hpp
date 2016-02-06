@@ -22,13 +22,13 @@
 #pragma once
 
 #include <sys/board.hpp>
-
+#include <config.h>
 namespace charger
 {
 
 class Charger
 {
-    const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(1000);
+	const board::MonotonicTime deadline_ = board::clock::getMonotonic() + board::MonotonicDuration::fromMSec(TIME_OUT_MS);
 
     unsigned target_output_voltage_ = 0;
     std::uint8_t error_flags_ = 0;

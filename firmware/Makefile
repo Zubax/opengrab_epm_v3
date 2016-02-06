@@ -64,6 +64,7 @@ FLAGS = -mthumb -mcpu=cortex-m0 -mno-thumb-interwork -flto -Os -g3 -Wall -Wextra
 C_CPP_FLAGS = $(FLAGS) -MD -MP -MF $(DEPDIR)/$(@F).d
 
 CFLAGS = $(C_CPP_FLAGS) -std=c99
+CFLAGS += -PRODROPPER=${PRODROPPER}	    //not working??
 
 CPPFLAGS = $(C_CPP_FLAGS) -pedantic -std=c++14 -fno-rtti -fno-threadsafe-statics
 

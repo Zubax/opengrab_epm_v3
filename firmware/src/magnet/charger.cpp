@@ -22,7 +22,7 @@
 #include "charger.hpp"
 #include <sys/board.hpp>
 #include <chip.h>
-
+#include <config.h>
 namespace charger
 {
 
@@ -58,13 +58,14 @@ Charger::Status Charger::runAndGetStatus()
      * Error checks
      */
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
+	const auto ouput_voltage_V   = board::getOutVoltageInVolts();
 
-    if (supply_voltage_mV < 4300)
+	if (supply_voltage_mV < VIN_MIN_MV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
-    if (supply_voltage_mV > 6700)
+	if (supply_voltage_mV > VIN_MAX_MV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooHigh);
     }
@@ -94,32 +95,34 @@ Charger::Status Charger::runAndGetStatus()
      * Should be exact for a linear inductor.
      * We are pushing the core right up to saturation so it's not exact science.
      */
-    const unsigned on_time = (((12000000 / (supply_voltage_mV - 500)) - 42) / 104);
 
-    /*
-     * Pretty close to optimal
-     */
-    unsigned off_time = ((10000000 / (supply_voltage_mV - 500)) / (board::getOutVoltageInVolts() + 1)) * 50;
 
-    if (off_time > 360)     // Prevent overflow
-    {
-        off_time = (off_time - 250) / 104;
-    }
-    else
-    {
-        off_time = 1;       // We could posible shave off 30ms from the charge time if we had more resolution
-    }
+	unsigned on_time_ns = PR_INDUCTANCE_PH / (supply_voltage_mV - 500);
+	unsigned off_time_ns = ((PR_INDUCTANCE_PH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
 
+	unsigned on_time_cy = (on_time_ns - 42) / 104;
+	unsigned off_time_cy = 0;
+
+	off_time_ns += 1000;
+
+	if (off_time_ns > 360)
+	{
+		off_time_cy = (off_time_ns -250) / 104;
+	}
+	else
+	{
+		off_time_cy = 1;
+	}
     // When output_voltage is relaly low off time is to long
-    if (off_time > 120)
+	if (off_time_cy > 120)
     {
-        off_time = 120;
+		off_time_cy = 120;
     }
 
     // Sanity check and run a few cycles
-    if (on_time > 0 && on_time < 30)
+	if (on_time_cy > 0 && on_time_cy < 30)
     {
-        board::runPump(50, on_time, off_time);
+		board::runPump(50, on_time_cy, off_time_cy);
     }
 
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
