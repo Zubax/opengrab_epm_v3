@@ -40,7 +40,7 @@ namespace
 static constexpr std::uint16_t TurnOffCycleArray[][2] =
 {
     { 475, 0 },
-	{ BLAH, 0 },		//magic
+    { BLAH, 0 },        //magic
     { 300, 1 },
     { 290, 0 },
     { 280, 1 },

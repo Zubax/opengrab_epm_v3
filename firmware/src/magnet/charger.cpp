@@ -58,14 +58,14 @@ Charger::Status Charger::runAndGetStatus()
      * Error checks
      */
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
-	const auto ouput_voltage_V   = board::getOutVoltageInVolts();
+    const auto ouput_voltage_V   = board::getOutVoltageInVolts();
 
-	if (supply_voltage_mV < VIN_MIN_MV)
+    if (supply_voltage_mV < VIN_MIN_MV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
-	if (supply_voltage_mV > VIN_MAX_MV)
+    if (supply_voltage_mV > VIN_MAX_MV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooHigh);
     }
@@ -97,32 +97,32 @@ Charger::Status Charger::runAndGetStatus()
      */
 
 
-	unsigned on_time_ns = PR_INDUCTANCE_PH / (supply_voltage_mV - 500);
-	unsigned off_time_ns = ((PR_INDUCTANCE_PH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
+    unsigned on_time_ns = PR_INDUCTANCE_PH / (supply_voltage_mV - 500);
+    unsigned off_time_ns = ((PR_INDUCTANCE_PH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
 
-	unsigned on_time_cy = (on_time_ns - 42) / 104;
-	unsigned off_time_cy = 0;
+    unsigned on_time_cy = (on_time_ns - 42) / 104;
+    unsigned off_time_cy = 0;
 
-	off_time_ns += 1000;
+    off_time_ns += 1000;
 
-	if (off_time_ns > 360)
-	{
-		off_time_cy = (off_time_ns -250) / 104;
-	}
-	else
-	{
-		off_time_cy = 1;
-	}
-    // When output_voltage is relaly low off time is to long
-	if (off_time_cy > 120)
+    if (off_time_ns > 360)
     {
-		off_time_cy = 120;
+        off_time_cy = (off_time_ns -250) / 104;
+    }
+    else
+    {
+        off_time_cy = 1;
+    }
+    // When output_voltage is relaly low off time is to long
+    if (off_time_cy > 120)
+    {
+        off_time_cy = 120;
     }
 
     // Sanity check and run a few cycles
-	if (on_time_cy > 0 && on_time_cy < 30)
+    if (on_time_cy > 0 && on_time_cy < 30)
     {
-		board::runPump(50, on_time_cy, off_time_cy);
+        board::runPump(50, on_time_cy, off_time_cy);
     }
 
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
