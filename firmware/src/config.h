@@ -9,7 +9,7 @@
 	#define RATE_LIMIT_MS 3000
 	#define VIN_MIN_MV 6700
 	#define VIN_MAX_MV 15000
-	#define PR_INDUCTANCE_PH 10000000\
+	#define PR_INDUCTANCE_PH 10000000
 	#define BLAH 200
 #else							//OpenGrab EPM V3
 	#define TIME_OUT_MS 1000
