@@ -21,6 +21,13 @@ ifdef BOARD_OLIMEX_LPC_P11C24
     DEF += -DBOARD_OLIMEX_LPC_P11C24
 endif
 
+# ProDropper support
+PRODROPPER ?= 0
+ifneq ($(PRODROPPER),0)
+    $(info Building for ProDropper)
+    DEF += -DPRODROPPER=1
+endif
+
 #
 # UAVCAN library
 #
@@ -64,7 +71,6 @@ FLAGS = -mthumb -mcpu=cortex-m0 -mno-thumb-interwork -flto -Os -g3 -Wall -Wextra
 C_CPP_FLAGS = $(FLAGS) -MD -MP -MF $(DEPDIR)/$(@F).d
 
 CFLAGS = $(C_CPP_FLAGS) -std=c99
-CFLAGS += -PRODROPPER=${PRODROPPER}        //not working??
 
 CPPFLAGS = $(C_CPP_FLAGS) -pedantic -std=c++14 -fno-rtti -fno-threadsafe-statics
 
@@ -101,35 +107,35 @@ all: $(OBJ) $(ELF) $(BIN) $(HEX) size
 $(OBJ): | $(BUILDDIR)
 
 $(BUILDDIR):
-    @mkdir -p $(BUILDDIR)
-    @mkdir -p $(DEPDIR)
-    @mkdir -p $(OBJDIR)
+	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(DEPDIR)
+	@mkdir -p $(OBJDIR)
 
 $(BIN): $(ELF)
-    @echo
-    $(CP) -O binary $(ELF) $@
+	@echo
+	$(CP) -O binary $(ELF) $@
 
 $(HEX): $(ELF)
-    @echo
-    $(CP) -O ihex $(ELF) $@
+	@echo
+	$(CP) -O ihex $(ELF) $@
 
 $(ELF): $(OBJ)
-    @echo
-    $(LD) $(OBJ) $(LDFLAGS) -o $@
+	@echo
+	$(LD) $(OBJ) $(LDFLAGS) -o $@
 
 $(COBJ): $(OBJDIR)/%.o: %.c
-    @echo
-    $(CC) -c $(DEF) $(INC) $(CFLAGS) $< -o $@
+	@echo
+	$(CC) -c $(DEF) $(INC) $(CFLAGS) $< -o $@
 
 $(CPPOBJ): $(OBJDIR)/%.o: %.cpp
-    @echo
-    $(CPPC) -c $(DEF) $(INC) $(CPPFLAGS) $< -o $@
+	@echo
+	$(CPPC) -c $(DEF) $(INC) $(CPPFLAGS) $< -o $@
 
 clean:
-    rm -rf $(BUILDDIR) dsdlc_generated
+	rm -rf $(BUILDDIR) dsdlc_generated
 
 size: $(ELF)
-    @if [ -f $(ELF) ]; then echo; $(SIZE) $(ELF); echo; fi;
+	@if [ -f $(ELF) ]; then echo; $(SIZE) $(ELF); echo; fi;
 
 .PHONY: all clean size $(BUILDDIR)
 
