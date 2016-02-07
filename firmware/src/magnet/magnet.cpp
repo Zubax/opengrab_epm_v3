@@ -29,7 +29,7 @@
 #include "charger.hpp"
 #include <sys/board.hpp>
 #include <uavcan/util/lazy_constructor.hpp>
-#include <config.h>
+#include <config.hpp>
 
 
 namespace magnet

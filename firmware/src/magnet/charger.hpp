@@ -22,7 +22,8 @@
 #pragma once
 
 #include <sys/board.hpp>
-#include <config.h>
+#include <config.hpp>
+
 namespace charger
 {
 

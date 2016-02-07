@@ -22,7 +22,7 @@
 #include "charger.hpp"
 #include <sys/board.hpp>
 #include <chip.h>
-#include <config.h>
+
 namespace charger
 {
 
