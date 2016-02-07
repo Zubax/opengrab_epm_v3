@@ -60,12 +60,12 @@ Charger::Status Charger::runAndGetStatus()
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
     const auto ouput_voltage_V   = board::getOutVoltageInVolts();
 
-    if (supply_voltage_mV < VIN_MIN_MV)
+    if (supply_voltage_mV < build_config::VinMin_mV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
-    if (supply_voltage_mV > VIN_MAX_MV)
+    if (supply_voltage_mV > build_config::VinMax_mV)
     {
         addErrorFlags(ErrorFlagInputVoltageTooHigh);
     }
@@ -97,8 +97,8 @@ Charger::Status Charger::runAndGetStatus()
      */
 
 
-    unsigned on_time_ns = PR_INDUCTANCE_PH / (supply_voltage_mV - 500);
-    unsigned off_time_ns = ((PR_INDUCTANCE_PH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
+    unsigned on_time_ns = build_config::PRInductance_pH / (supply_voltage_mV - 500);
+    unsigned off_time_ns = ((build_config::PRInductance_pH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
 
     unsigned on_time_cy = (on_time_ns - 42) / 104;
     unsigned off_time_cy = 0;

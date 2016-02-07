@@ -29,7 +29,7 @@
 #include "charger.hpp"
 #include <sys/board.hpp>
 #include <uavcan/util/lazy_constructor.hpp>
-#include <config.hpp>
+#include <build_config.hpp>
 
 
 namespace magnet
@@ -40,7 +40,7 @@ namespace
 static constexpr std::uint16_t TurnOffCycleArray[][2] =
 {
     { 475, 0 },
-    { BLAH, 0 },        //magic
+    { build_config::TurnOffSecondCycleVoltage, 0 },        //magic
     { 300, 1 },
     { 290, 0 },
     { 280, 1 },
@@ -86,7 +86,8 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
 
-static board::MonotonicDuration MinCommandInterval = board::MonotonicDuration::fromMSec(RATE_LIMIT_MS);
+static board::MonotonicDuration MinCommandInterval =
+    board::MonotonicDuration::fromMSec(build_config::CommandRateLimit_ms);
 
 static uavcan::LazyConstructor<charger::Charger> chrg;
 
