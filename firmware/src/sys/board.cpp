@@ -477,6 +477,11 @@ unsigned getSupplyVoltageInMillivolts()
     unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
                                        AdcResolutionBits);
 
+    if (old_value == 0)  // If old value is uninitialized, the result will be half of the real value
+    {
+        x *= 2;
+    }
+
     old_value = new_value;
 
     x *= 5;                             // Should be x*=5.5

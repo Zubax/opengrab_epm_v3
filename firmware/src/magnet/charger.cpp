@@ -60,18 +60,14 @@ Charger::Status Charger::runAndGetStatus()
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
     const auto ouput_voltage_V   = board::getOutVoltageInVolts();
 
-    board::syslog("supply_voltage_mV = ",supply_voltage_mV, "\r\n");
-
     if (supply_voltage_mV < build_config::VinMin_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooLow");
-        addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
     if (supply_voltage_mV > build_config::VinMax_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooHigh");
-        addErrorFlags(ErrorFlagInputVoltageTooHigh);
     }
 
     if (board::clock::getMonotonic() > deadline_)
