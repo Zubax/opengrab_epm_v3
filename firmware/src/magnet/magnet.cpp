@@ -194,8 +194,9 @@ void turnOn(unsigned num_cycles)
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         const auto ts = board::clock::getMonotonic();
-        if (magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+        if ((last_command_ts.isZero() != 0) && (ts - last_command_ts < MinCommandInterval))
         {
+            board::syslog("Rate limiting");
             return;         // Rate limiting
         }
         last_command_ts = ts;
@@ -213,8 +214,9 @@ void turnOff()
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         const auto ts = board::clock::getMonotonic();
-        if (!magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+        if ((last_command_ts.isZero() != 0) && (ts - last_command_ts < MinCommandInterval))
         {
+            board::syslog("Rate limiting");
             return;         // Rate limiting
         }
         last_command_ts = ts;
