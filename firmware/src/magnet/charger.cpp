@@ -62,12 +62,14 @@ Charger::Status Charger::runAndGetStatus()
 
     if (supply_voltage_mV < build_config::VinMin_mV)
     {
-        board::syslog("ErrorFlagInputVoltageTooLow");
+        board::syslog("ErrorFlagInputVoltageTooLow");       // We should keep this, makes it easier to diagnose power supply problems
+        addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
     if (supply_voltage_mV > build_config::VinMax_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooHigh");
+        addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
     if (board::clock::getMonotonic() > deadline_)

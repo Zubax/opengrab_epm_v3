@@ -28,15 +28,15 @@ namespace build_config
 
 static constexpr unsigned ChargerTimeout_ms             = 1000;
 static constexpr unsigned CommandRateLimit_ms           = 3000;
-static constexpr unsigned VinMin_mV                     = 8000;
-static constexpr unsigned VinMax_mV                     = 16000;
-static constexpr unsigned PRInductance_pH               = 10000000;
+static constexpr unsigned VinMin_mV                     = 10000;
+static constexpr unsigned VinMax_mV                     = 15000;
+static constexpr unsigned PRInductance_pH               = 11000000;
 static constexpr unsigned TurnOffSecondCycleVoltage     = 200;
 
 #else                           //OpenGrab EPM V3
 
 static constexpr unsigned ChargerTimeout_ms             = 1000;
-static constexpr unsigned CommandRateLimit_ms           = 2500;
+static constexpr unsigned CommandRateLimit_ms           = 1500;
 static constexpr unsigned VinMin_mV                     = 4300;
 static constexpr unsigned VinMax_mV                     = 6700;
 static constexpr unsigned PRInductance_pH               = 11000000;
