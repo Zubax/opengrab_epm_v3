@@ -21,6 +21,13 @@ ifdef BOARD_OLIMEX_LPC_P11C24
     DEF += -DBOARD_OLIMEX_LPC_P11C24
 endif
 
+# ProDropper support
+PRODROPPER ?= 0
+ifneq ($(PRODROPPER),0)
+    $(info Building for ProDropper)
+    DEF += -DPRODROPPER=1
+endif
+
 #
 # UAVCAN library
 #

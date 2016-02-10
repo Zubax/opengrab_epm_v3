@@ -29,6 +29,8 @@
 #include "charger.hpp"
 #include <sys/board.hpp>
 #include <uavcan/util/lazy_constructor.hpp>
+#include <build_config.hpp>
+
 
 namespace magnet
 {
@@ -38,7 +40,7 @@ namespace
 static constexpr std::uint16_t TurnOffCycleArray[][2] =
 {
     { 475, 0 },
-    { 450, 0 },
+    { build_config::TurnOffSecondCycleVoltage, 0 },        //magic
     { 300, 1 },
     { 290, 0 },
     { 280, 1 },
@@ -84,7 +86,8 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
 
-static board::MonotonicDuration MinCommandInterval = board::MonotonicDuration::fromMSec(2500);
+static board::MonotonicDuration MinCommandInterval =
+    board::MonotonicDuration::fromMSec(build_config::CommandRateLimit_ms);
 
 static uavcan::LazyConstructor<charger::Charger> chrg;
 
@@ -191,8 +194,10 @@ void turnOn(unsigned num_cycles)
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         const auto ts = board::clock::getMonotonic();
-        if (magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+
+        if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
         {
+            board::syslog("Rate limiting");
             return;         // Rate limiting
         }
         last_command_ts = ts;
@@ -210,8 +215,9 @@ void turnOff()
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         const auto ts = board::clock::getMonotonic();
-        if (!magnet_is_on && (ts - last_command_ts < MinCommandInterval))
+        if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
         {
+            board::syslog("Rate limiting");
             return;         // Rate limiting
         }
         last_command_ts = ts;
