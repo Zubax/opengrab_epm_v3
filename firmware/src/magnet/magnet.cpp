@@ -197,7 +197,7 @@ void turnOn(unsigned num_cycles)
 
         if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
         {
-            board::syslog("Rate limiting");
+            board::syslog("Rate limiting\r\n");
             return;         // Rate limiting
         }
         last_command_ts = ts;
@@ -217,7 +217,7 @@ void turnOff()
         const auto ts = board::clock::getMonotonic();
         if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
         {
-            board::syslog("Rate limiting");
+            board::syslog("Rate limiting\r\n");
             return;         // Rate limiting
         }
         last_command_ts = ts;
