@@ -75,9 +75,30 @@ void callPollAndResetWatchdog()
 
     static board::MonotonicTime led_update_deadline = ts;
     static bool led_status = false;
+    static bool boot = true;
+    static bool blah = false;
 
+    /*
+     * LED DIP test after boot
+     */
+
+    if (boot)
+    {
+        boot = !boot;
+
+        board::setStatusLed(true);
+        board::setCanLed(true);
+        led_update_deadline += board::MonotonicDuration::fromMSec(500);
+
+        board::syslog("dip = ,",int(board::readDipSwitch));
+    }
     if (ts >= led_update_deadline)
     {
+        if(!blah)
+        {
+            board::setCanLed(false);
+            blah = !blah;
+        }
         led_status = !led_status;
         board::setStatusLed(led_status);
 
