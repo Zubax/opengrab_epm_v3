@@ -1,0 +1,23 @@
+R60IF3470506AJ Test Report
+
+6 x 0.47uF capacitors where charged at ~500V in parallel 				
+				
+16-Feb	  
+13:21					2.65uF	505V
+14:15					2.5u	506V
+
+17-Feb	 
+0:58						496V
+10:44					2.35uF	494V
+13:23						496V
+15:28						486V
+20:09					2.28uF	495V
+
+18-Feb  	
+18:00						490V
+
+19-Feb	
+11:00					2.3uF	496V
+				
+This concludes 70h at ~500V or 1.3e6 cycles				
+Capacitance drop was under 20% 				
