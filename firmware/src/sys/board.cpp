@@ -483,7 +483,7 @@ unsigned getSupplyVoltageInMillivolts()
     }
 
     old_value = new_value;
-
+    x *= 558;
 //    x *= 5;                             // Should be x*=5.5
 //    x += 650;                           // Poor man's optimizatin to not unintegerify the math, it's within 100mV -
 
