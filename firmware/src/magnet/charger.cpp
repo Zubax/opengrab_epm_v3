@@ -98,9 +98,19 @@ Charger::Status Charger::runAndGetStatus()
      * We are pushing the core right up to saturation so it's not exact science.
      */
 
+    // reduce current consumtion when Vin is low, compatiblity with crapy power rails like PixHawk or cell phone chargers
 
-    unsigned on_time_ns = build_config::PRInductance_pH / (supply_voltage_mV - 500);
-    unsigned off_time_ns = ((build_config::PRInductance_pH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
+    unsigned on_time_ns = 0;
+    unsigned off_time_ns = 0;
+    if(supply_voltage_mV < build_config::ReducedCurrentVoltage_mV)
+    {
+        on_time_ns = (build_config::PRInductance_pH - 3000000) / (supply_voltage_mV - 500);
+        off_time_ns = (((build_config::PRInductance_pH - 3000000) / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
+    }else{
+        on_time_ns = build_config::PRInductance_pH / (supply_voltage_mV - 500);
+        off_time_ns = ((build_config::PRInductance_pH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
+    }
+
 
     unsigned on_time_cy = (on_time_ns - 42) / 104;
     unsigned off_time_cy = 0;

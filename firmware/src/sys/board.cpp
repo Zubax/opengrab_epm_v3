@@ -466,7 +466,7 @@ bool hadButtonPressEvent()
     }
 }
 
-unsigned getSupplyVoltageInMillivolts()
+unsigned getSupplyVoltageInMillivolts()     //error under 2%
 {
     static std::uint16_t old_value = 0;
 
@@ -483,11 +483,11 @@ unsigned getSupplyVoltageInMillivolts()
     }
 
     old_value = new_value;
-    x *= 558;
-//    x *= 5;                             // Should be x*=5.5
-//    x += 650;                           // Poor man's optimizatin to not unintegerify the math, it's within 100mV -
 
-//    x = std::max(4500U, x);             // This is because measurements below this voltage are highly unreliable
+    x *= 556;
+    x = x / 100;                        // should be /= but does not work
+
+    x = std::max(4300U, x);             // This is because measurements below this voltage are highly unreliable
 
 #if BOARD_OLIMEX_LPC_P11C24
     x = 5000;                           // Simulation...
