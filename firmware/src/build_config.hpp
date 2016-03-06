@@ -32,6 +32,7 @@ static constexpr unsigned VinMin_mV                     = 10000;
 static constexpr unsigned VinMax_mV                     = 15000;
 static constexpr unsigned PRInductance_pH               = 11000000;
 static constexpr unsigned TurnOffSecondCycleVoltage     = 200;
+static constexpr unsigned ReducedCurrentVoltage_mV      = 8000;
 
 #else                           //OpenGrab EPM V3
 
@@ -41,6 +42,7 @@ static constexpr unsigned VinMin_mV                     = 4300;
 static constexpr unsigned VinMax_mV                     = 6700;
 static constexpr unsigned PRInductance_pH               = 11000000;
 static constexpr unsigned TurnOffSecondCycleVoltage     = 450;
+static constexpr unsigned ReducedCurrentVoltage_mV      = 4800;
 
 #endif
 
