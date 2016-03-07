@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2015 Zubax Robotics, <info@zubax.com>
+# Copyright (C) 2015-2016 Zubax Robotics, <info@zubax.com>
 # Author: Pavel Kirienko <pavel.kirienko@zubax.com>
 #
 
 from drwatson import init, run, make_api_context_with_user_provided_credentials, execute_shell_command,\
-    info, error, input, CLIWaitCursor, download, abort
+    info, error, input, CLIWaitCursor, download, abort, fatal
 from drwatson import lpc11c00_can_bootloader as bootloader
 from contextlib import closing
 
@@ -19,20 +19,53 @@ This application requires superuser priveleges to function correctly.
 Usage instructions:
     1. Connect CAN adapter to this computer.
     2. Start this application and follow its instructions.''',
-            lambda p: p.add_argument('iface', help='CAN interface name, e.g. "can0"'),
+            lambda p: p.add_argument('--iface', help='CAN interface name, e.g. "can0"'),
             lambda p: p.add_argument('--firmware', '-f', help='location of the firmware file', default=FIRMWARE_URL),
             lambda p: p.add_argument('--only-sign', help='skip testing, only install signature',
                                      action='store_true'),
+            lambda p: p.add_argument('--generate-signed-image-for',
+                                     help='only generate signed image for the provided unique ID. '
+                                     'The ID should be provided as 4 comma-separated integers'),
             require_root=True)
 
 api = make_api_context_with_user_provided_credentials()
+
+
+def generate_signed_image_for(comma_separated_uid_integers):
+    import struct
+    import os
+    try:
+        unique_id_integers = list(map(int, comma_separated_uid_integers.split(',')))
+        if len(unique_id_integers) != 4:
+            raise ValueError('Unique ID must be composed of exactly 4 integers')
+        unique_id = struct.pack('<IIII', *unique_id_integers)
+        assert len(unique_id) == 128 / 8
+    except Exception as ex:
+        fatal('Could not parse unique ID: %s', ex)
+
+    info('Requesting signature for unique ID %s', ' '.join(['%02x' % x for x in unique_id]))
+    gensign_response = api.generate_signature(unique_id, PRODUCT_NAME)
+    firmware_with_signature = firmware_base.ljust(SIGNATURE_OFFSET, b'\xFF') + gensign_response.signature
+
+    image_name = '-'.join(map(str, unique_id_integers)) + '.bin'
+    with open(image_name, 'wb') as f:
+        f.write(firmware_with_signature)
+    os.chmod(image_name, 0o666)
+    info('Signed image stored into %r', image_name)
+
 
 with CLIWaitCursor():
     firmware_base = download(args.firmware)
     assert 0 < len(firmware_base) <= SIGNATURE_OFFSET, 'Firmware size is incorrect'
 
-    execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
-                          args.iface, args.iface, bootloader.CAN_BITRATE, ignore_failure=True)
+if args.generate_signed_image_for:
+    generate_signed_image_for(args.generate_signed_image_for)
+    exit(0)
+
+if not args.iface:
+    fatal('Iface is required')
+execute_shell_command('ifconfig %s down && ip link set %s up type can bitrate %d sample-point 0.875',
+                      args.iface, args.iface, bootloader.CAN_BITRATE, ignore_failure=True)
 
 
 def load_and_start_firmware(bootloader_interface, firmware_image):

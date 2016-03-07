@@ -11,7 +11,7 @@ Then execute the setup script as superuser, and you're ready to go:
 
 ```bash
 sudo ./setup.sh
-sudo ./drwatson_epm_v3.py can0
+sudo ./drwatson_epm_v3.py --iface=can0
 ```
 
 ## Uploading binary using LPC11 embedded CAN bootloader
