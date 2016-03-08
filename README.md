@@ -55,13 +55,18 @@ Parameter       | Value
 Baud rate       | 115200
 Interface       | ISP
 Oscilator       | 12 MHz
-File            | Use the `.hex` file in the build output directory
+File            | Use the `.hex` file in the build output directory**
 
 1. Connect the USB-UART adapter.
 2. Close J3 to select serial bootloader.
 3. Close J4 to force the LPC to start the bootloader.
 4. Power up the board.
 5. Run the flashing tool.
+
+** If needed the .hex file can be created from .bin:
+```bash
+arm-none-eabi-objcopy -I binary -O ihex firmware.bin out.hex
+```
 
 ### Via DroneCode Probe
 
