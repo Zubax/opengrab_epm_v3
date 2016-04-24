@@ -85,6 +85,8 @@ unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();
 
+unsigned getMagInMilliTeslas();
+
 /**
  * Status of the PWM input.
  */

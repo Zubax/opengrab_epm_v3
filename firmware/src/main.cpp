@@ -115,7 +115,9 @@ void callPollAndResetWatchdog()
         /* Debug
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
+         *
          */
+        board::syslog("Mag = ", board::getMagInMilliTeslas(), " V\r\n");
     }
 
     /*
