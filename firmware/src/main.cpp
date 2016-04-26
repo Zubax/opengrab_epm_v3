@@ -84,7 +84,7 @@ void callPollAndResetWatchdog()
     if (boot)
     {
         boot = !boot;
-        if (board::isButtonPressed())
+        if (board::isButtonPressed() && board::isMagPresent())
         {
             board::calibrateMagnetometer();
         }else{

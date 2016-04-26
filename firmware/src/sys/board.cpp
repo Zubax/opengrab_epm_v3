@@ -112,7 +112,7 @@ constexpr PinMuxGroup pinmux[] =
     // PIO1
     { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
 
-    { IOCON_PIO1_11, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Mag_ADC
+    { IOCON_PIO1_11, IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Mag_ADC
 
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
@@ -492,6 +492,17 @@ unsigned getMagInMilliTeslas()     //error under 2%
 
 
     return x;
+}
+
+bool isMagPresent()
+{
+    std::uint16_t new_value = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH7, &new_value);
+    unsigned x = static_cast<unsigned>((static_cast<unsigned>(new_value) * AdcReferenceMillivolts) >>
+                                       AdcResolutionBits);
+    if(x < 100)
+        return false;
+    return true;
 }
 
 unsigned getSupplyVoltageInMillivolts()     //error under 2%

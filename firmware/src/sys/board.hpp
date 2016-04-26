@@ -89,6 +89,8 @@ unsigned getOutVoltageInVolts();
 
 unsigned getMagInMilliTeslas();
 
+bool isMagPresent();
+
 unsigned calibrateMagnetometer();
 
 /**
