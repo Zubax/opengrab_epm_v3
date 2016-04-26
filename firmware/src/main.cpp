@@ -75,7 +75,7 @@ void callPollAndResetWatchdog()
 
     static board::MonotonicTime led_update_deadline = ts;
     static bool led_status = false;
-    static bool boot = true;
+    static bool boot = 1;
     static bool first_time_led_update = true;
 
     /*
@@ -84,12 +84,19 @@ void callPollAndResetWatchdog()
     if (boot)
     {
         boot = !boot;
-        if(board::readDipSwitch() == 0)
+        if (board::isButtonPressed())
         {
-            board::setStatusLed(true);
-            board::setCanLed(true);
-            led_update_deadline += board::MonotonicDuration::fromMSec(500);
-        }
+            board::calibrateMagnetometer();
+        }else{
+
+            if(board::readDipSwitch() == 0)
+            {
+                board::setStatusLed(true);
+                board::setCanLed(true);
+                led_update_deadline += board::MonotonicDuration::fromMSec(500);
+            }
+       }
+
     }
 
     if (ts >= led_update_deadline)

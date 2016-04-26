@@ -468,7 +468,17 @@ bool hadButtonPressEvent()
         return had_press;
     }
 }
+bool isButtonPressed(){
+    return gpio::get(StatusLedPortNum, StatusLedPinMask);
+}
 
+unsigned calibrateMagnetometer()
+{
+    board::syslog("Calibrating \r\n");
+    board::syslog("Mag = ", board::getMagInMilliTeslas(), " V\r\n");
+
+    return true;
+}
 
 unsigned getMagInMilliTeslas()     //error under 2%
 {
