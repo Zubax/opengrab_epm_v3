@@ -8,7 +8,8 @@
 
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 32K
+    /* 28K for firmware, the last 4K sector is reserved for nonvolatile storage */
+    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 28K
     /* Notice RAM offset - this is needed for on-chip CCAN */
     RAM (rwx) :  ORIGIN = 0x100000C0, LENGTH = 0x1F40
 }

@@ -296,6 +296,79 @@ void init()
     resetWatchdog();
 }
 
+static const unsigned FlashStorageSize = 256;
+static const unsigned FlashStorageAddress = 32768 - FlashStorageSize;
+static const unsigned FlashStorageSectorNumber = 7;
+
+static const unsigned FlashStorageOffsetDeviceSignature = FlashStorageSize - std::tuple_size<DeviceSignature>::value;
+static const unsigned FlashStorageOffsetMagnetometerCalibration = FlashStorageOffsetDeviceSignature - 8;
+
+void readFlashStorage(unsigned offset, unsigned length, void* output)
+{
+    std::memcpy(output,
+                reinterpret_cast<void*>(FlashStorageAddress + offset),
+                length);
+}
+
+int writeFlashStorage(unsigned offset, unsigned length, const void* data)
+{
+    // Sanity check
+    if (length == 0 || (length + offset) > FlashStorageSize)
+    {
+        return -1000;
+    }
+
+    // Reading contents from flash into a temporary RAM buffer (which must be word aligned)
+    alignas(long long) std::uint8_t buffer[FlashStorageSize];
+    std::memcpy(buffer, reinterpret_cast<void*>(FlashStorageAddress), FlashStorageSize);
+
+    // Modifying the temporary buffer accordingly
+    std::memmove(buffer + offset, data, length);
+
+    // IAP commands go here
+    unsigned iap_command = 0;
+    unsigned iap_args[5] = {};
+    const auto iap_entry_point = reinterpret_cast<void(*)(void*, void*)>(0x1FFF1FF1);
+
+    // Erasing the sector
+    iap_command = 52;
+    iap_args[0] = FlashStorageSectorNumber;     // Start sector
+    iap_args[1] = FlashStorageSectorNumber;     // End sector
+    iap_args[2] = SystemCoreClock / 1000;       // System clock in kHz
+    iap_entry_point(&iap_command, iap_args);
+
+    if (iap_args[0] != 0)
+    {
+        return -int(iap_args[0]);
+    }
+
+    // Preparing the sector for write
+    iap_command = 50;
+    iap_args[0] = FlashStorageSectorNumber;     // Start sector
+    iap_args[1] = FlashStorageSectorNumber;     // End sector
+    iap_entry_point(&iap_command, iap_args);
+
+    if (iap_args[0] != 0)
+    {
+        return -int(iap_args[0]);
+    }
+
+    // Writing
+    iap_command = 51;
+    iap_args[0] = FlashStorageAddress;                  // Destination
+    iap_args[1] = reinterpret_cast<unsigned>(&buffer);  // Source
+    iap_args[2] = FlashStorageSize;                     // Size
+    iap_args[3] = SystemCoreClock / 1000;               // System clock in kHz
+    iap_entry_point(&iap_command, iap_args);
+
+    if (iap_args[0] != 0)
+    {
+        return -int(iap_args[0]);
+    }
+
+    return 0;
+}
+
 } // namespace
 
 void die()
@@ -316,11 +389,9 @@ void readUniqueID(UniqueID& out_uid)
 
 bool tryReadDeviceSignature(DeviceSignature& out_signature)
 {
-    static const unsigned SignatureAddress = 32768 - std::tuple_size<DeviceSignature>::value; // End of flash
-
-    std::memcpy(out_signature.data(),
-                reinterpret_cast<void*>(SignatureAddress),
-                std::tuple_size<DeviceSignature>::value);
+    readFlashStorage(FlashStorageOffsetDeviceSignature,
+                     std::tuple_size<DeviceSignature>::value,
+                     out_signature.data());
 
     for (auto x : out_signature)
     {
@@ -476,10 +547,14 @@ bool isButtonCurrentlyPressed()
 
 unsigned calibrateMagnetometer()
 {
-    board::syslog("Calibrating \r\n");
-    board::syslog("Mag = ", board::getMagneticFieldStrengthInMilliTeslas(), " V\r\n");
+    board::syslog("Calibrating\r\n");
 
-    return true;
+    const unsigned value = board::getMagneticFieldStrengthInMilliTeslas();
+    board::syslog("Mag = ", value, " V\r\n");
+
+    writeFlashStorage(FlashStorageOffsetMagnetometerCalibration, sizeof(value), &value);
+
+    return value;
 }
 
 unsigned getMagneticFieldStrengthInMilliTeslas()     //error under 2%
