@@ -84,7 +84,7 @@ void callPollAndResetWatchdog()
     if (boot)
     {
         boot = !boot;
-        if (board::isButtonCurrentlyPressed() && board::isMagPresent())
+        if (board::isButtonCurrentlyPressed() && board::isMagnetometerPresent())
         {
             board::calibrateMagnetometer();
         }
@@ -123,7 +123,7 @@ void callPollAndResetWatchdog()
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
          */
-        board::syslog("Mag = ", board::getMagInMilliTeslas(), " V\r\n");
+        board::syslog("Mag = ", board::getMagneticFieldStrengthInMilliTeslas(), " V\r\n");
     }
 
     /*

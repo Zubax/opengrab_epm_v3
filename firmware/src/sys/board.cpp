@@ -477,12 +477,12 @@ bool isButtonCurrentlyPressed()
 unsigned calibrateMagnetometer()
 {
     board::syslog("Calibrating \r\n");
-    board::syslog("Mag = ", board::getMagInMilliTeslas(), " V\r\n");
+    board::syslog("Mag = ", board::getMagneticFieldStrengthInMilliTeslas(), " V\r\n");
 
     return true;
 }
 
-unsigned getMagInMilliTeslas()     //error under 2%
+unsigned getMagneticFieldStrengthInMilliTeslas()     //error under 2%
 {
     std::uint16_t new_value = 0;
     (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH7, &new_value);
@@ -493,7 +493,7 @@ unsigned getMagInMilliTeslas()     //error under 2%
     return x;
 }
 
-bool isMagPresent()
+bool isMagnetometerPresent()
 {
     // TODO: this largely duplicates getMagInMilliTeslas(), optimize?
     std::uint16_t new_value = 0;

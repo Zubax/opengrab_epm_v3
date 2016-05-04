@@ -87,9 +87,9 @@ unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();
 
-unsigned getMagInMilliTeslas();
+unsigned getMagneticFieldStrengthInMilliTeslas();
 
-bool isMagPresent();
+bool isMagnetometerPresent();
 
 unsigned calibrateMagnetometer();
 
