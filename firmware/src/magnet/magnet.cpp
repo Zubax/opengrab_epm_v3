@@ -116,7 +116,7 @@ void pollOn()
 {
     if (!chrg.isConstructed())
     {
-//        board::syslog("Mag ON chrg started\r\n");
+        board::syslog("Mag ON chrg started\r\n");
         chrg.construct<unsigned>(475);
     }
 
@@ -152,7 +152,7 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-//        board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
+        board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
         chrg.construct<unsigned>(cycle_array_item[0]);
     }
 
@@ -206,7 +206,7 @@ void turnOn(unsigned num_cycles)
         num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
         remaining_cycles = int(num_cycles);
 
-//        board::syslog("Mag on ", remaining_cycles, "\r\n");
+        board::syslog("Mag on ", remaining_cycles, "\r\n");
     }
 }
 
