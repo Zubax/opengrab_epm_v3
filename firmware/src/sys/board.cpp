@@ -326,44 +326,47 @@ int writeFlashStorage(unsigned offset, unsigned length, const void* data)
     std::memmove(buffer + offset, data, length);
 
     // IAP commands go here
-    unsigned iap_command = 0;
-    unsigned iap_args[5] = {};
-    const auto iap_entry_point = reinterpret_cast<void(*)(void*, void*)>(0x1FFF1FF1);
+    unsigned iap_command[5] = {};
+    unsigned iap_result[5] = {};
+    const auto iap_entry_point = reinterpret_cast<void(*)(unsigned[5], unsigned[4])>(0x1FFF1FF1);
+
+    // Preparing the sector for write
+    iap_command[0] = 50;
+    iap_command[1] = FlashStorageSectorNumber;  // Start sector
+    iap_command[2] = FlashStorageSectorNumber;  // End sector
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
+    {
+        return -int(iap_result[0]);
+    }
 
     // Erasing the sector
-    iap_command = 52;
-    iap_args[0] = FlashStorageSectorNumber;     // Start sector
-    iap_args[1] = FlashStorageSectorNumber;     // End sector
-    iap_args[2] = SystemCoreClock / 1000;       // System clock in kHz
-    iap_entry_point(&iap_command, iap_args);
-
-    if (iap_args[0] != 0)
+    iap_command[0] = 52;
+    iap_command[3] = SystemCoreClock / 1000;    // System clock in kHz
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
     {
-        return -int(iap_args[0]);
+        return -int(iap_result[0]);
     }
 
     // Preparing the sector for write
-    iap_command = 50;
-    iap_args[0] = FlashStorageSectorNumber;     // Start sector
-    iap_args[1] = FlashStorageSectorNumber;     // End sector
-    iap_entry_point(&iap_command, iap_args);
-
-    if (iap_args[0] != 0)
+    iap_command[0] = 50;
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
     {
-        return -int(iap_args[0]);
+        return -int(iap_result[0]);
     }
 
     // Writing
-    iap_command = 51;
-    iap_args[0] = FlashStorageAddress;                  // Destination
-    iap_args[1] = reinterpret_cast<unsigned>(&buffer);  // Source
-    iap_args[2] = FlashStorageSize;                     // Size
-    iap_args[3] = SystemCoreClock / 1000;               // System clock in kHz
-    iap_entry_point(&iap_command, iap_args);
-
-    if (iap_args[0] != 0)
+    iap_command[0] = 51;
+    iap_command[1] = FlashStorageAddress;                  // Destination
+    iap_command[2] = reinterpret_cast<unsigned>(&buffer);  // Source
+    iap_command[3] = FlashStorageSize;                     // Size
+    iap_command[4] = SystemCoreClock / 1000;               // System clock in kHz
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
     {
-        return -int(iap_args[0]);
+        return -int(iap_result[0]);
     }
 
     return 0;
