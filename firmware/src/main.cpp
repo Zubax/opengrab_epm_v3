@@ -101,7 +101,7 @@ void callPollAndResetWatchdog()
 
     if (ts >= led_update_deadline)
     {
-        if(first_time_led_update)           // Turn off CAN status
+        if (first_time_led_update)           // Turn off CAN status
         {
             board::setCanLed(false);
             first_time_led_update = !first_time_led_update;

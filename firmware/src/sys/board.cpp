@@ -542,6 +542,10 @@ bool hadButtonPressEvent()
 
 bool isButtonCurrentlyPressed()
 {
+    if (gpio::markOutputs(StatusLedPortNum, StatusLedPinMask) != 0)
+    {
+        return false;   // LED is on, ignore
+    }
     return gpio::get(StatusLedPortNum, StatusLedPinMask) != 0;
 }
 
