@@ -85,7 +85,7 @@ def load_and_start_firmware(bootloader_interface, firmware_image):
             break
 
 
-def process_one_device():
+def process_one_device(set_device_info):
     execute_shell_command('ifconfig %s down && ifconfig %s up', args.iface, args.iface)
 
     if not args.only_sign:
@@ -113,6 +113,7 @@ def process_one_device():
         with CLIWaitCursor():
             info('Reading unique ID...')
             unique_id = bli.read_unique_id()
+            set_device_info(PRODUCT_NAME, unique_id)
 
             info('Requesting signature for unique ID %s', ' '.join(['%02x' % x for x in unique_id]))
             gensign_response = api.generate_signature(unique_id, PRODUCT_NAME)
@@ -124,4 +125,4 @@ def process_one_device():
             load_and_start_firmware(bli, firmware_with_signature)
 
 
-run(process_one_device)
+run(api, process_one_device)
