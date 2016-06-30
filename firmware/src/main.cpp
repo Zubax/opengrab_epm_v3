@@ -266,16 +266,37 @@ void configureAcceptanceFilters()
 
 void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
 {
+    int U=0;
     if (msg.hardpoint_id != getHwConfig().hardpoint_id)
     {
         return;
+    }
+
+    board::syslog("Boot\r\n");
+
+    if (msg.command == 0)
+    {
+        board::syslog("magnet on\r\n");
+    }
+    else
+    {
+        if (msg.command < 1000)
+        {
+           U = msg.command;
+           board::syslog("magnet negative, U = ",U,"V \r\n");
+        }
+        if (msg.command > 1001)
+        {
+            U = msg.command-1000;
+            board::syslog("manget positive, U = ",U,"V \r\n");
+        }
     }
 
     /*
      * The last command field is initialized at an impossible value in order to force a switch once
      * the first command is received. This will force the magnet into a known state.
      */
-    static unsigned last_command = std::numeric_limits<unsigned>::max();
+   /* static unsigned last_command = std::numeric_limits<unsigned>::max();
 
     if ((bool(msg.command) != magnet::isTurnedOn()) || (msg.command != last_command))
     {
@@ -291,6 +312,7 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
 
     // Oi moroz moroz ne moroz' mena
     last_command = msg.command; // Ne moroz' mena moigo kona
+    */
 }
 
 void publishHardpointStatus()
