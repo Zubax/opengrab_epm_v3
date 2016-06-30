@@ -282,7 +282,11 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
     {
         if (msg.command < 1000)
         {
-           U = msg.command;
+            U = msg.command;
+            magnet::TurnOffCycleArray[0][0] = U;
+            magnet::TurnOffCycleArray[0][0] = 1;
+
+
            board::syslog("magnet negative, U = ",U,"V \r\n");
         }
         if (msg.command > 1001)

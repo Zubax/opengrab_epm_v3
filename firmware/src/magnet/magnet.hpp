@@ -35,6 +35,11 @@ void poll();
  */
 static constexpr std::uint8_t MinTurnOnCycles = 3;
 static constexpr std::uint8_t MaxCycles = 10;
+unsiged TurnOffCycleArray[][2] =
+{
+    { 0, 0 },
+
+};
 
 /**
  * Turns the magnet on.
