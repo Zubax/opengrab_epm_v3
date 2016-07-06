@@ -39,7 +39,7 @@ namespace
 
 
 
-static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
+static constexpr unsigned TurnOffCycleArraySize = 1; //sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
 
 static board::MonotonicDuration MinCommandInterval =
     board::MonotonicDuration::fromMSec(build_config::CommandRateLimit_ms);
@@ -61,6 +61,8 @@ static bool magnet_is_on = false;               ///< This is default
 
 static board::MonotonicTime last_command_ts;
 
+unsigned charge_voltage =0;
+unsigned charge_direction =0;
 
 void updateChargerStatusFlags(std::uint8_t x)
 {
@@ -101,14 +103,11 @@ void pollOn()
 
 void pollOff()
 {
-    const unsigned cycle_index = TurnOffCycleArraySize - unsigned(-remaining_cycles);
-
-    const auto cycle_array_item = TurnOffCycleArray[cycle_index];
 
     if (!chrg.isConstructed())
     {
-        board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
-        chrg.construct<unsigned>(cycle_array_item[0]);
+        board::syslog("Mag Off chrg started\r\n");
+        chrg.construct<unsigned>(charge_voltage);
     }
 
     const auto status = chrg->runAndGetStatus();
@@ -120,18 +119,20 @@ void pollOff()
     }
     else if (status == charger::Charger::Status::Done)
     {
-        if (cycle_array_item[1])        // The cap is charged, switching the magnet
+        if (charge_direction == 0)        // The cap is charged, switching the magnet
         {
-            board::setMagnetPos();
-        }
-        else
-        {
+            board::syslog("calling setMagnetNeg \r\n");
             board::setMagnetNeg();
-            magnet_is_on = false;
+        }
+        if (charge_direction == 1)
+        {
+            board::syslog("calling setMagnetPos \r\n");
+            board::setMagnetPos();
+
         }
 
         chrg.destroy();
-        remaining_cycles++;
+        remaining_cycles=0;
         health = Health::Ok;
     }
     else
@@ -165,24 +166,15 @@ void turnOn(unsigned num_cycles)
     }
 }
 
-void turnOff()
+void turnOff(unsigned U, unsigned D)
 {
+
+    charge_voltage =U;
+    charge_direction =D;
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-        const auto ts = board::clock::getMonotonic();
-        if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
-        {
-            board::syslog("Rate limiting\r\n");
-            return;         // Rate limiting
-        }
-        last_command_ts = ts;
+        remaining_cycles = -1;
 
-        board::syslog("Mag off\r\n");
-        remaining_cycles = -int(TurnOffCycleArraySize);
-        if (!magnet_is_on)
-        {
-            remaining_cycles += 0;
-        }
     }
 }
 

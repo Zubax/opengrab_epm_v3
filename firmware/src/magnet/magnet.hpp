@@ -35,11 +35,8 @@ void poll();
  */
 static constexpr std::uint8_t MinTurnOnCycles = 3;
 static constexpr std::uint8_t MaxCycles = 10;
-unsiged TurnOffCycleArray[][2] =
-{
-    { 0, 0 },
 
-};
+
 
 /**
  * Turns the magnet on.
@@ -50,7 +47,7 @@ void turnOn(unsigned num_cycles);
 /**
  * Turns the magnet off. The number of switch cycles is fixed.
  */
-void turnOff();
+void turnOff(unsigned U, unsigned D);
 
 bool isTurnedOn();
 

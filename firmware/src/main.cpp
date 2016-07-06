@@ -131,7 +131,7 @@ void callPollAndResetWatchdog()
         }
         if (pwm == board::PwmInput::Low)
         {
-            magnet::turnOff();
+            magnet::turnOff(0,0);
         }
     }
 
@@ -142,7 +142,7 @@ void callPollAndResetWatchdog()
     {
         if (magnet::isTurnedOn())
         {
-            magnet::turnOff();
+            magnet::turnOff(0,0);
         }
         else
         {
@@ -283,16 +283,19 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
         if (msg.command < 1000)
         {
             U = msg.command;
-            magnet::TurnOffCycleArray[0][0] = U;
-            magnet::TurnOffCycleArray[0][0] = 1;
+            board::syslog("magnet negative, U = ",U,"V \r\n");
+            //magnet::TurnOffCycleArray[0][0] =  (unsigned int)U;
+            //magnet::TurnOffCycleArray[0][0] = 0;
+            magnet::turnOff((unsigned int)U, 0);
 
-
-           board::syslog("magnet negative, U = ",U,"V \r\n");
         }
         if (msg.command > 1001)
         {
             U = msg.command-1000;
             board::syslog("manget positive, U = ",U,"V \r\n");
+            //magnet::TurnOffCycleArray[0][0] =  (unsigned int)U;
+            //magnet::TurnOffCycleArray[0][0] = 1;
+            magnet::turnOff((unsigned int)U, 1);
         }
     }
 
