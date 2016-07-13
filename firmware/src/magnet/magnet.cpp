@@ -42,7 +42,7 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
     #if defined(PRODROPPER)
 
     { 475, 0 },
-    { build_config::TurnOffSecondCycleVoltage, 0 },        //magic
+    { 200, 0 },
     { 300, 1 },
     { 290, 0 },
     { 280, 1 },
