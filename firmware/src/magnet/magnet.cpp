@@ -39,8 +39,10 @@ namespace
 
 static constexpr std::uint16_t TurnOffCycleArray[][2] =
 {
+    #if defined(PRODROPPER)
+
     { 475, 0 },
-    { build_config::TurnOffSecondCycleVoltage, 0 },        //magic
+    { 200, 0 },
     { 300, 1 },
     { 290, 0 },
     { 280, 1 },
@@ -82,6 +84,65 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
     { 20,  1 },
     { 20,  0 },
     { 20,  1 }
+
+    #else
+
+    { 475, 0 },
+    { 475, 0 },
+    { 475, 0 },
+    { 427, 1 },
+    { 427, 1 },
+    { 427, 1 },
+    { 384, 0 },
+    { 384, 0 },
+    { 384, 0 },
+    { 346, 1 },
+    { 346, 1 },
+    { 346, 1 },
+    { 311, 0 },
+    { 311, 0 },
+    { 311, 0 },
+    { 280, 1 },
+    { 280, 1 },
+    { 280, 1 },
+    { 252, 0 },
+    { 252, 0 },
+    { 252, 0 },
+    { 227, 1 },
+    { 227, 1 },
+    { 227, 1 },
+    { 204, 0 },
+    { 204, 0 },
+    { 204, 0 },
+    { 184, 1 },
+    { 184, 1 },
+    { 184, 1 },
+    { 165, 0 },
+    { 165, 0 },
+    { 165, 0 },
+    { 149, 1 },
+    { 149, 1 },
+    { 149, 1 },
+    { 134, 0 },
+    { 134, 0 },
+    { 134, 0 },
+    { 120, 1 },
+    { 120, 1 },
+    { 120, 1 },
+    { 108, 0 },
+    { 108, 0 },
+    { 108, 0 },
+    { 97,  1 },
+    { 97,  1 },
+    { 97,  1 },
+    { 88,  0 },
+    { 88,  0 },
+    { 88,  0 },
+    { 79,  1 },
+    { 79,  1 },
+    { 79,  1 }
+
+    #endif
 };
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
@@ -226,7 +287,7 @@ void turnOff()
         remaining_cycles = -int(TurnOffCycleArraySize);
         if (!magnet_is_on)
         {
-            remaining_cycles += 3;
+            remaining_cycles += build_config::cycles_to_skip;
         }
     }
 }

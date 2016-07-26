@@ -112,6 +112,7 @@ void callPollAndResetWatchdog()
                 (magnet::getHealth() == magnet::Health::Ok)      ? 950 :
                 (magnet::getHealth() == magnet::Health::Warning) ? 500 : 100);
         }
+
         /* Debug
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
