@@ -31,9 +31,10 @@ The build outputs will be available in the directory `build/`.
 
 ## Flashing the firmware
 
-** Note Don’t cycle the EPM you cannot get zapped
-** HV section to avoid touching during debug, see fig(1)
-** Solder Jumper settings see fig(1)
+### Usefull info
+* Don’t cycle the EPM you cannot get zapped
+* HV section to avoid touching during debug, see fig(1)
+* Solder Jumper settings see fig(1)
 
 <img src="annotation.jpg" class="thumbnail" title="fig(1)">
 
