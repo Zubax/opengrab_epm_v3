@@ -35,7 +35,7 @@ The build outputs will be available in the directory `build/`.
 ** HV section to avoid touching during debug, see fig(1)
 ** Solder Jumper settings see fig(1)
 
-<img src="anodation.jpg" class="thumbnail" title="fig(1)">
+<img src="annotation.jpg" class="thumbnail" title="fig(1)">
 
 
 ### Via UART
@@ -70,7 +70,8 @@ File            | Use the `.hex` file in the build output directory**
 4. Power up the board.
 5. Run the flashing tool.
 
-** If needed the .hex file can be created from .bin:
+** Brebuild .hex file is avaialbe [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/) 
+** Or a .hex file can be created from .bin:
 ```bash
 arm-none-eabi-objcopy -I binary -O ihex firmware.bin out.hex
 ```
