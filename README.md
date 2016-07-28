@@ -32,13 +32,13 @@ The build outputs will be available in the directory `build/`.
 ## Flashing the firmware
 
 ### Useful info
-* Do not cycle the EPM and you cannot get zapped
-* Don't zap your computer it will not survive 
-* HV section to avoid touching during debug, see fig. 1
-* Solder Jumper settings see fig. 1
+
+* Do not cycle the EPM and you cannot get zapped.
+* Don't zap your computer it will not survive.
+* HV section to avoid touching during debug, see fig. 1.
+* Solder Jumper settings see fig. 1.
 
 ![Figure 1](annotation.jpg "Figure 1")
-
 
 ### Via UART
 
@@ -72,8 +72,9 @@ File            | Use the `.hex` file in the build output directory**
 4. Power up the board.
 5. Run the flashing tool.
 
-* Prebuild .hex file is available [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/) 
-* Or a .hex file can be created from .bin:
+* Prebuilt `.hex` file is available [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/)
+* Or a `.hex` file can be created from `.bin`:
+
 ```bash
 arm-none-eabi-objcopy -I binary -O ihex firmware.bin out.hex
 ```
