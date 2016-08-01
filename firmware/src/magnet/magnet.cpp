@@ -265,7 +265,7 @@ void turnOn(unsigned num_cycles)
         num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
         remaining_cycles = int(num_cycles);
 
-        //board::syslog("Mag on ", remaining_cycles, "\r\n");
+        //board::syslog("Mag on ", remaining_cycles, "\r\n"); //too much printing
     }
 }
 

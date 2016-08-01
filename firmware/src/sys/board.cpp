@@ -351,16 +351,18 @@ void setStatusLed(bool state)
 
 void DutycycleCounterPP()
 {
-    DutycycleCounter += 200;
+    DutycycleCounter += 180;
     if (DutycycleCounter > DutycycleCounterMax)
     {
         DutycycleCounter = DutycycleCounterMax;
     }
 }
+
 void DutycycleCounterMM()
 {
     DutycycleCounter --;
 }
+
 signed DutycycleCounterRead()
 {
     return DutycycleCounter;

@@ -43,8 +43,6 @@ using uavcan_lpc11c24::clock::getMonotonic;
 using uavcan::MonotonicTime;
 using uavcan::MonotonicDuration;
 
-
-
 #if __GNUC__
 __attribute__((noreturn))
 #endif
@@ -64,8 +62,6 @@ void DutycycleCounterPP();
 void DutycycleCounterMM();
 signed DutycycleCounterRead();
 
-
-
 /**
  * Switches the pump specified number of times with specified duty cycle.
  * Warning: this function does not check correctness of the arguments.
@@ -82,7 +78,6 @@ void setMagnetNeg();
 static constexpr std::uint8_t DipSwitchBits = 4;
 std::uint8_t readDipSwitch();
 
-
 /**
  * Whether the button was pressed since last invokation of this function.
  * This function must be called at least every 10 ms.
@@ -92,7 +87,6 @@ bool hadButtonPressEvent();
 unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();
-
 
 /**
  * Status of the PWM input.

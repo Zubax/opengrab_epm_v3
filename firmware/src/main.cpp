@@ -120,6 +120,8 @@ void callPollAndResetWatchdog()
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
          */
+
+        /* Debug */
         board::syslog("cycleCounter = ", board::DutycycleCounterRead(), " \r\n");
         if (magnet::isTurnedOn())
         {
@@ -130,12 +132,14 @@ void callPollAndResetWatchdog()
             magnet::turnOn(magnet::MinTurnOnCycles);
         }
     }
+
+    /*
+     * Updae cycle counter every 100ms
+     */
     if (ts1 >= cycleCounterUpdate)
     {
         board::DutycycleCounterPP();
         cycleCounterUpdate += board::MonotonicDuration::fromMSec(100);
-
-
     }
 
     /*
