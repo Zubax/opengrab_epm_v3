@@ -37,11 +37,6 @@ static constexpr std::uint8_t MinTurnOnCycles = 3;
 static constexpr std::uint8_t MaxCycles = 10;
 
 /**
-  * Dutycycle limiting counter
-  */
-
-
-/**
  * Turns the magnet on.
  * @param num_cycles    - number of switch cycles
  */

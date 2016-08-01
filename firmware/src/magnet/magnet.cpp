@@ -213,7 +213,7 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-        //board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
+        //board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n"); //too much printing
         chrg.construct<unsigned>(cycle_array_item[0]);
     }
 
