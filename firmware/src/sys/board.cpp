@@ -79,6 +79,9 @@ constexpr std::uint32_t PwmInputTimeoutUSec   = 100000;
 static std::uint32_t pwm_input_pulse_usec;
 static uavcan::MonotonicTime last_pwm_input_update_ts;
 
+signed DutycycleCounter = 13000;
+signed DutycycleCounterMax = 13000;
+
 struct CriticalSectionLocker
 {
     CriticalSectionLocker()
@@ -344,6 +347,23 @@ void setStatusLed(bool state)
     {
         gpio::makeInputs(StatusLedPortNum, StatusLedPinMask);
     }
+}
+
+void DutycycleCounterPP()
+{
+    DutycycleCounter += 200;
+    if (DutycycleCounter > DutycycleCounterMax)
+    {
+        DutycycleCounter = DutycycleCounterMax;
+    }
+}
+void DutycycleCounterMM()
+{
+    DutycycleCounter --;
+}
+signed DutycycleCounterRead()
+{
+    return DutycycleCounter;
 }
 
 void setCanLed(bool state)

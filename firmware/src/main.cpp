@@ -72,12 +72,14 @@ void callPollAndResetWatchdog()
      * Status LED update
      */
     const auto ts = board::clock::getMonotonic();
+    const auto ts1 = board::clock::getMonotonic();
 
     static board::MonotonicTime led_update_deadline = ts;
     static bool led_status = false;
     static bool boot = true;
     static bool first_time_led_update = true;
 
+    static board::MonotonicTime cycleCounterUpdate = ts1;
     /*
      * LED DIP test after boot
      */
@@ -113,10 +115,27 @@ void callPollAndResetWatchdog()
                 (magnet::getHealth() == magnet::Health::Warning) ? 500 : 100);
         }
 
+
         /* Debug
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
          */
+        board::syslog("cycleCounter = ", board::DutycycleCounterRead(), " \r\n");
+        if (magnet::isTurnedOn())
+        {
+            magnet::turnOff();
+        }
+        else
+        {
+            magnet::turnOn(magnet::MinTurnOnCycles);
+        }
+    }
+    if (ts1 >= cycleCounterUpdate)
+    {
+        board::DutycycleCounterPP();
+        cycleCounterUpdate += board::MonotonicDuration::fromMSec(100);
+
+
     }
 
     /*

@@ -213,7 +213,7 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-        board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
+        //board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
         chrg.construct<unsigned>(cycle_array_item[0]);
     }
 
@@ -254,20 +254,18 @@ void turnOn(unsigned num_cycles)
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-        const auto ts = board::clock::getMonotonic();
-
-        if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
+        if (board::DutycycleCounterRead() < 0)
         {
             board::syslog("Rate limiting\r\n");
             return;         // Rate limiting
         }
-        last_command_ts = ts;
+
 
         num_cycles = std::max<unsigned>(MinTurnOnCycles, num_cycles);
         num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
         remaining_cycles = int(num_cycles);
 
-        board::syslog("Mag on ", remaining_cycles, "\r\n");
+        //board::syslog("Mag on ", remaining_cycles, "\r\n");
     }
 }
 
@@ -275,13 +273,11 @@ void turnOff()
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-        const auto ts = board::clock::getMonotonic();
-        if ((last_command_ts.isZero() != true) && (ts - last_command_ts < MinCommandInterval))
+        if (board::DutycycleCounterRead() < 0)
         {
             board::syslog("Rate limiting\r\n");
             return;         // Rate limiting
         }
-        last_command_ts = ts;
 
         board::syslog("Mag off\r\n");
         remaining_cycles = -int(TurnOffCycleArraySize);
