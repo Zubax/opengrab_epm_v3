@@ -134,6 +134,7 @@ Charger::Status Charger::runAndGetStatus()
     // Sanity check and run a few cycles
     if (on_time_cy > 0 && on_time_cy < 30)
     {
+        board::DutycycleCounterMM();
         board::runPump(50, on_time_cy, off_time_cy);
     }
 

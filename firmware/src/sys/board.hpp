@@ -58,6 +58,9 @@ void resetWatchdog();
 
 void setStatusLed(bool state);
 void setCanLed(bool state);
+void DutycycleCounterPP();
+void DutycycleCounterMM();
+signed DutycycleCounterRead();
 
 /**
  * Switches the pump specified number of times with specified duty cycle.
