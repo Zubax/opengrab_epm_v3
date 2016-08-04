@@ -169,7 +169,7 @@ static board::MonotonicTime last_command_ts;
 
 signed duty_cycle_counter = 13000;              // when charging is in progress this counter can run negative, it's a better approximation for the limit
 
-constexpr unsigned duty_cycle_counter_max = 13000;
+constexpr unsigned DutyCycleCounterMax = 13000;
 
 void updateChargerStatusFlags(std::uint8_t x)
 {
@@ -257,7 +257,6 @@ void turnOn(unsigned num_cycles)
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-
         if (duty_cycle_counter< 0)
         {
             board::syslog("Rate limiting\r\n");
@@ -267,7 +266,6 @@ void turnOn(unsigned num_cycles)
         num_cycles = std::max<unsigned>(MinTurnOnCycles, num_cycles);
         num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
         remaining_cycles = int(num_cycles);
-
     }
 }
 
@@ -275,7 +273,6 @@ void turnOff()
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
-
         if (duty_cycle_counter < 0)
         {
             board::syslog("Rate limiting\r\n");
@@ -284,6 +281,7 @@ void turnOff()
 
         board::syslog("Mag off\r\n");
         remaining_cycles = -int(TurnOffCycleArraySize);
+
         if (!magnet_is_on)
         {
             remaining_cycles += build_config::cycles_to_skip;
@@ -303,10 +301,16 @@ void poll()
 
     if (ts >= duty_cycle_counter_update_deadline)
     {
+        duty_cycle_counter_update_deadline += board::MonotonicDuration::fromMSec(100);
         duty_cycle_counter += 180;
+
+        if (duty_cycle_counter > DutyCycleCounterMax)
+        {
+            duty_cycle_counter = DutyCycleCounterMax;
+        }
+
         duty_cycle_counter_update_deadline += board::MonotonicDuration::fromMSec(100);
     }
-
 
     if (remaining_cycles > 0)
     {
