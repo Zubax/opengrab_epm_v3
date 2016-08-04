@@ -169,7 +169,7 @@ static board::MonotonicTime last_command_ts;
 
 signed duty_cycle_counter = 13000;              // when charging is in progress this counter can run negative, it's a better approximation for the limit
 
-constexpr unsigned DutyCycleCounterMax = 13000;
+constexpr signed DutyCycleCounterMax = 13000;   // Comparing signed with unsigned is problematic
 
 void updateChargerStatusFlags(std::uint8_t x)
 {
