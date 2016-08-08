@@ -308,8 +308,6 @@ void poll()
         {
             duty_cycle_counter = DutyCycleCounterMax;
         }
-
-        duty_cycle_counter_update_deadline += board::MonotonicDuration::fromMSec(100);
     }
 
     if (remaining_cycles > 0)
