@@ -63,12 +63,14 @@ Charger::Status Charger::runAndGetStatus()
     if (supply_voltage_mV < build_config::VinMin_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooLow\r\n");       // We should keep this, makes it easier to diagnose power supply problems
+        board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
     if (supply_voltage_mV > build_config::VinMax_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooHigh\r\n");
+        board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
@@ -77,6 +79,17 @@ Charger::Status Charger::runAndGetStatus()
 #if BOARD_OLIMEX_LPC_P11C24
         return Status::Done;                            // This is just a testing mock
 #endif
+        unsigned vout =  board::getOutVoltageInVolts();
+        board::syslog("\r\n\r\nCharger timed out\r\n");
+        board::syslog("Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+        board::syslog("Vout        = ", vout, " V\r\n");
+        board::syslog("Vout target = ",target_output_voltage_, " V\r\n");
+
+        if (vout < 160 && vout > 50)
+        {
+            board::syslog("\r\n    High side Thyristor failure likely \r\n");
+        }
+
         addErrorFlags(ErrorFlagTimeout);
     }
 
