@@ -195,11 +195,11 @@ void pollOn()
         board::setMagnetPos();          // The cap is charged, switching the magnet
         magnet_is_on = true;
 
-        unsigned Vout = board::getOutVoltageInVolts();
+        board::delayMSec(3);                   // Wait until ADC cap settles
+        const unsigned Vout = board::getOutVoltageInVolts();
 
         if (Vout > 50)
         {
-
             board::syslog("\r\nCapacitor failed to discharge \r\n");
             board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");
             board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
@@ -255,7 +255,8 @@ void pollOff()
         }
         magnet_is_on = false;
 
-        unsigned Vout = board::getOutVoltageInVolts();
+        board::delayMSec(3);                   // Wait until ADC cap settles
+        const unsigned Vout = board::getOutVoltageInVolts();
         if (Vout > 50)
         {
             board::syslog("\r\nCapacitor failed to discharge \r\n");
@@ -267,7 +268,6 @@ void pollOff()
             remaining_cycles = 0;
             chrg.destroy();
         }
-
         chrg.destroy();
         remaining_cycles++;
         health = Health::Ok;
