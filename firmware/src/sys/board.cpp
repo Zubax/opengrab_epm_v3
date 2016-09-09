@@ -497,17 +497,16 @@ unsigned getSupplyVoltageInMillivolts()     //error under 2%
 
 unsigned getOutVoltageInVolts()
 {
-    static std::uint16_t old_value = 0;
+    std::uint16_t value1 = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &value1);
 
-    std::uint16_t new_value = 0;
-    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &new_value);
-
+    std::uint16_t value2 = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH0, &value2);
     // Division and multiplication by 2 are reduced
     const unsigned x =
-        static_cast<unsigned>((static_cast<unsigned>(new_value + old_value) * AdcReferenceMillivolts) >>
+        static_cast<unsigned>((static_cast<unsigned>(value1 + value2) * AdcReferenceMillivolts) >>
                               AdcResolutionBits);
 
-    old_value = new_value;
     return x / 10;
 }
 
