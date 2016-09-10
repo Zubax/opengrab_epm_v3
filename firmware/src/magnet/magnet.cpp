@@ -287,6 +287,7 @@ void turnOn(unsigned num_cycles)
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         board::syslog("\r\n On command received \r\n");
+        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
 
         if (duty_cycle_counter< 0)
         {
@@ -305,6 +306,7 @@ void turnOff()
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         board::syslog("\r\n Off command received \r\n");
+        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
 
         if (duty_cycle_counter < 0)
         {

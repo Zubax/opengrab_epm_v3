@@ -59,6 +59,14 @@ Charger::Status Charger::runAndGetStatus()
      */
     const auto supply_voltage_mV = board::getSupplyVoltageInMillivolts();
     const auto ouput_voltage_V   = board::getOutVoltageInVolts();
+    static unsigned supply_volatage_mV_min = 10000;
+
+    if (supply_voltage_mV < supply_voltage_mV_min)
+    {
+        supply_volatage_mV_min = supply_voltage_mV;
+    }
+
+
 
     if (supply_voltage_mV < build_config::VinMin_mV)
     {
@@ -149,7 +157,10 @@ Charger::Status Charger::runAndGetStatus()
     {
         board::runPump(50, on_time_cy, off_time_cy);
     }
-
+    if (board::getOutVoltageInVolts() >= target_output_voltage_)
+    {
+         board::syslog(" Vin min = ", supply_volatage_mV_min , " mV\r\n");
+    }
     return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
 }
 
