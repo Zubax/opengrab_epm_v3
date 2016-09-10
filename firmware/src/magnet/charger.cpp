@@ -79,6 +79,8 @@ Charger::Status Charger::runAndGetStatus()
 #if BOARD_OLIMEX_LPC_P11C24
         return Status::Done;                            // This is just a testing mock
 #endif
+        // Pint some usefull info when charger times out
+
         const unsigned vout =  board::getOutVoltageInVolts();
         board::syslog("\r\n\r\nCharger timed out\r\n");
         board::syslog("Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
