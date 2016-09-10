@@ -197,10 +197,10 @@ void pollOn()
 
         // Print some info when capacitor fails to discharge and delcare error
 
-        board::delayMSec(1);                   // Wait until ADC cap settles
+        board::delayMSec(2);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
 
-        if (Vout > 50)
+        if (Vout > 100)
         {
             board::syslog("\r\nCapacitor failed to discharge \r\n");
             board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");
@@ -258,9 +258,9 @@ void pollOff()
         magnet_is_on = false;
 
         // Print some info when capacitor fails to discharge and delcare error
-        board::delayMSec(3);                   // Wait until ADC cap settles
+        board::delayMSec(2);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
-        if (Vout > 50)
+        if (Vout > 100)                        // 1ms is not really enough hence 100V
         {
             board::syslog("\r\nCapacitor failed to discharge \r\n");
             board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");

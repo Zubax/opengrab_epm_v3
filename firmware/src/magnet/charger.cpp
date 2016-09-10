@@ -164,6 +164,7 @@ Charger::Status Charger::runAndGetStatus()
     if (Vout >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
     {
          board::syslog(" Vin min = ", supply_volatage_mV_min , " mV\r\n");
+         supply_volatage_mV_min = 10000;
     }
 
     return (Vout >= target_output_voltage_) ? Status::Done : Status::InProgress;
