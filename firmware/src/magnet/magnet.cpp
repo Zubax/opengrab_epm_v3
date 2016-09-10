@@ -195,7 +195,9 @@ void pollOn()
         board::setMagnetPos();          // The cap is charged, switching the magnet
         magnet_is_on = true;
 
-        board::delayMSec(3);                   // Wait until ADC cap settles
+        // Print some info when capacitor fails to discharge and delcare error
+
+        board::delayMSec(1);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
 
         if (Vout > 50)
@@ -216,7 +218,7 @@ void pollOn()
             health = Health::Ok;
         }
     }
-    else
+    else                                    // Charge timed out
     {
         chrg.destroy();
         remaining_cycles = 0;
@@ -255,6 +257,7 @@ void pollOff()
         }
         magnet_is_on = false;
 
+        // Print some info when capacitor fails to discharge and delcare error
         board::delayMSec(3);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
         if (Vout > 50)
@@ -268,11 +271,12 @@ void pollOff()
             remaining_cycles = 0;
             chrg.destroy();
         }
+
         chrg.destroy();
         remaining_cycles++;
         health = Health::Ok;
     }
-    else
+    else                    // Charger timed out
     {
         chrg.destroy();
         remaining_cycles = 0;
@@ -286,8 +290,12 @@ void turnOn(unsigned num_cycles)
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
+        // Print some usefull info
+
         board::syslog("\r\n On command received \r\n");
         board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+
+        // Check rate limiting
 
         if (duty_cycle_counter< 0)
         {
@@ -305,8 +313,12 @@ void turnOff()
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
+        // Print some usefull inf
+
         board::syslog("\r\n Off command received \r\n");
         board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+
+        // Check rate limiting
 
         if (duty_cycle_counter < 0)
         {
