@@ -63,12 +63,14 @@ Charger::Status Charger::runAndGetStatus()
     if (supply_voltage_mV < build_config::VinMin_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooLow\r\n");       // We should keep this, makes it easier to diagnose power supply problems
+        board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
     if (supply_voltage_mV > build_config::VinMax_mV)
     {
         board::syslog("ErrorFlagInputVoltageTooHigh\r\n");
+        board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
         addErrorFlags(ErrorFlagInputVoltageTooLow);
     }
 
@@ -77,6 +79,19 @@ Charger::Status Charger::runAndGetStatus()
 #if BOARD_OLIMEX_LPC_P11C24
         return Status::Done;                            // This is just a testing mock
 #endif
+        // Pint some usefull info when charger times out
+
+        const unsigned vout =  board::getOutVoltageInVolts();
+        board::syslog("\r\n\r\nCharger timed out\r\n");
+        board::syslog("Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+        board::syslog("Vout        = ", vout, " V\r\n");
+        board::syslog("Vout target = ",target_output_voltage_, " V\r\n");
+
+        if (vout < 160 && vout > 50)
+        {
+            board::syslog("\r\n    High side Thyristor failure likely \r\n");
+        }
+
         addErrorFlags(ErrorFlagTimeout);
     }
 
@@ -137,7 +152,22 @@ Charger::Status Charger::runAndGetStatus()
         board::runPump(50, on_time_cy, off_time_cy);
     }
 
-    return (board::getOutVoltageInVolts() >= target_output_voltage_) ? Status::Done : Status::InProgress;
+    // Keep track of supply Voltage during switching
+    static unsigned supply_volatage_mV_min = 10000;
+    if (supply_voltage_mV < supply_volatage_mV_min)
+    {
+        supply_volatage_mV_min = supply_voltage_mV;
+    }
+
+    // Print supply Voltage when below 4.8V
+    unsigned const Vout = board::getOutVoltageInVolts();
+    if (Vout >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
+    {
+         board::syslog(" Vin min = ", supply_volatage_mV_min , " mV\r\n");
+         supply_volatage_mV_min = 10000;
+    }
+
+    return (Vout >= target_output_voltage_) ? Status::Done : Status::InProgress;
 }
 
 }

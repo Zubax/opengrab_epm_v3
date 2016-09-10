@@ -180,7 +180,6 @@ void pollOn()
 {
     if (!chrg.isConstructed())
     {
-        board::syslog("Mag ON chrg started\r\n");
         chrg.construct<unsigned>(475);
     }
 
@@ -196,11 +195,30 @@ void pollOn()
         board::setMagnetPos();          // The cap is charged, switching the magnet
         magnet_is_on = true;
 
-        chrg.destroy();                 // Then updating the state
-        remaining_cycles--;
-        health = Health::Ok;
+        // Print some info when capacitor fails to discharge and delcare error
+
+        board::delayMSec(2);                   // Wait until ADC cap settles
+        const unsigned Vout = board::getOutVoltageInVolts();
+
+        if (Vout > 100)
+        {
+            board::syslog("\r\nCapacitor failed to discharge \r\n");
+            board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");
+            board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+            board::syslog("Vout = ", Vout, " V\r\n");
+
+            chrg.destroy();
+            remaining_cycles = 0;
+            health = Health::Error;
+        }
+        else
+        {
+            chrg.destroy();                 // Then updating the state
+            remaining_cycles--;
+            health = Health::Ok;
+        }
     }
-    else
+    else                                    // Charge timed out
     {
         chrg.destroy();
         remaining_cycles = 0;
@@ -216,7 +234,7 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-        board::syslog("Mag OFF chrg started cyc ", cycle_index, "\r\n");
+
         chrg.construct<unsigned>(cycle_array_item[0]);
     }
 
@@ -236,14 +254,29 @@ void pollOff()
         else
         {
             board::setMagnetNeg();
-            magnet_is_on = false;
+        }
+        magnet_is_on = false;
+
+        // Print some info when capacitor fails to discharge and delcare error
+        board::delayMSec(2);                   // Wait until ADC cap settles
+        const unsigned Vout = board::getOutVoltageInVolts();
+        if (Vout > 100)                        // 1ms is not really enough hence 100V
+        {
+            board::syslog("\r\nCapacitor failed to discharge \r\n");
+            board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");
+            board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+            board::syslog("Vout = ", Vout, " V\r\n");
+
+            health = Health::Error;
+            remaining_cycles = 0;
+            chrg.destroy();
         }
 
         chrg.destroy();
         remaining_cycles++;
         health = Health::Ok;
     }
-    else
+    else                    // Charger timed out
     {
         chrg.destroy();
         remaining_cycles = 0;
@@ -257,9 +290,16 @@ void turnOn(unsigned num_cycles)
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
+        // Print some usefull info
+
+        board::syslog("\r\n On command received \r\n");
+        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+
+        // Check rate limiting
+
         if (duty_cycle_counter< 0)
         {
-            board::syslog("Rate limiting\r\n");
+            board::syslog("\r\nRate limiting\r\n\r\n");
             return;         // Rate limiting
         }
 
@@ -273,13 +313,19 @@ void turnOff()
 {
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
+        // Print some usefull inf
+
+        board::syslog("\r\n Off command received \r\n");
+        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+
+        // Check rate limiting
+
         if (duty_cycle_counter < 0)
         {
-            board::syslog("Rate limiting\r\n");
+            board::syslog("\r\nRate limiting\r\n\r\n");
             return;         // Rate limiting
         }
 
-        board::syslog("Mag off\r\n");
         remaining_cycles = -int(TurnOffCycleArraySize);
 
         if (!magnet_is_on)
