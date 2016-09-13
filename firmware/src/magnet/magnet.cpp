@@ -234,7 +234,6 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-
         chrg.construct<unsigned>(cycle_array_item[0]);
     }
 
@@ -291,12 +290,10 @@ void turnOn(unsigned num_cycles)
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         // Print some usefull info
-
         board::syslog("\r\n On command received \r\n");
         board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
 
         // Check rate limiting
-
         if (duty_cycle_counter< 0)
         {
             board::syslog("\r\nRate limiting\r\n\r\n");
@@ -314,12 +311,10 @@ void turnOff()
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         // Print some usefull inf
-
         board::syslog("\r\n Off command received \r\n");
         board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
 
         // Check rate limiting
-
         if (duty_cycle_counter < 0)
         {
             board::syslog("\r\nRate limiting\r\n\r\n");
