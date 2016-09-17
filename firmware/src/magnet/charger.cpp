@@ -113,7 +113,6 @@ Charger::Status Charger::runAndGetStatus()
      */
 
     // reduce current consumtion when Vin is low, compatiblity with crapy power rails like PixHawk or cell phone chargers
-
     unsigned on_time_ns = 0;
     unsigned off_time_ns = 0;
     if(supply_voltage_mV < build_config::ReducedCurrentVoltage_mV)
