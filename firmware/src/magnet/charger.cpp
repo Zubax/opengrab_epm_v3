@@ -157,14 +157,14 @@ Charger::Status Charger::runAndGetStatus()
     }
 
     // Print supply Voltage when below 4.8V
-    unsigned const OutputVoltage = board::getOutVoltageInVolts();
-    if (OutputVoltage >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
+    const unsigned output_voltage = board::getOutVoltageInVolts();
+    if (output_voltage >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
     {
          board::syslog(" Vin min = ", supply_volatage_mV_min , " mV\r\n");
          supply_volatage_mV_min = 10000;
     }
 
-    return (OutputVoltage >= target_output_voltage_) ? Status::Done : Status::InProgress;
+    return (output_voltage >= target_output_voltage_) ? Status::Done : Status::InProgress;
 }
 
 }
