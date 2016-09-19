@@ -80,7 +80,6 @@ Charger::Status Charger::runAndGetStatus()
         return Status::Done;                            // This is just a testing mock
 #endif
         // Pint some usefull info when charger times out
-
         const unsigned vout =  board::getOutVoltageInVolts();
         board::syslog("\r\n\r\nCharger timed out\r\n");
         board::syslog("Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
@@ -114,7 +113,6 @@ Charger::Status Charger::runAndGetStatus()
      */
 
     // reduce current consumtion when Vin is low, compatiblity with crapy power rails like PixHawk or cell phone chargers
-
     unsigned on_time_ns = 0;
     unsigned off_time_ns = 0;
     if(supply_voltage_mV < build_config::ReducedCurrentVoltage_mV)
@@ -125,7 +123,6 @@ Charger::Status Charger::runAndGetStatus()
         on_time_ns = build_config::PRInductance_pH / (supply_voltage_mV - 500);
         off_time_ns = ((build_config::PRInductance_pH / (supply_voltage_mV - 500)) / (ouput_voltage_V + 1)) * 50;
     }
-
 
     unsigned on_time_cy = (on_time_ns - 42) / 104;
     unsigned off_time_cy = 0;
@@ -160,14 +157,14 @@ Charger::Status Charger::runAndGetStatus()
     }
 
     // Print supply Voltage when below 4.8V
-    unsigned const Vout = board::getOutVoltageInVolts();
-    if (Vout >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
+    const unsigned output_voltage = board::getOutVoltageInVolts();
+    if (output_voltage >= target_output_voltage_ && supply_volatage_mV_min <= 4800)
     {
          board::syslog(" Vin min = ", supply_volatage_mV_min , " mV\r\n");
          supply_volatage_mV_min = 10000;
     }
 
-    return (Vout >= target_output_voltage_) ? Status::Done : Status::InProgress;
+    return (output_voltage >= target_output_voltage_) ? Status::Done : Status::InProgress;
 }
 
 }
