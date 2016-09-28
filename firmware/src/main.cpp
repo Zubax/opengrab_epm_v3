@@ -357,6 +357,9 @@ __attribute__((noinline))
 void init()
 {
     board::syslog("Boot\r\n");
+    board::syslog("FW built at ");
+    board::syslog(__DATE__);
+    board::syslog("\r\n");
     board::resetWatchdog();
 
     callPollAndResetWatchdog();
