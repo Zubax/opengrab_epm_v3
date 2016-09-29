@@ -33,13 +33,16 @@ The build outputs will be available in the directory `build/`.
 
 ### Useful info
 
-* Do not cycle the EPM and you cannot get zapped.
+* If you do not cycle the EPM you cannot get zapped.
 * Don't zap your computer it will not survive.
 * HV section to avoid touching during debug, see fig. 1.
-* Solder Jumper settings see fig. 1.
+* Solder Jumper settings see fig. 1 and 2
 
+#### V3 Rev 4B and earlyer
 ![Figure 1](annotation.jpg "Figure 1")
 
+#### V3 Rev 5C
+![Figure 1](annotationR5C.jpg "Figure 1")
 ### Via UART
 
 #### Connecting USB-UART adapter
@@ -64,7 +67,7 @@ Parameter       | Value
 Baud rate       | 115200
 Interface       | ISP
 Oscilator       | 12 MHz
-File            | Use the `.hex` file in the build output directory**
+File            | Use the Prebuild `.hex` avaialbe [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/) **
 
 1. Connect the USB-UART adapter.
 2. Close J3 to select serial bootloader.
@@ -72,7 +75,8 @@ File            | Use the `.hex` file in the build output directory**
 4. Power up the board.
 5. Run the flashing tool.
 
-* Prebuilt `.hex` file is available [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/)
+** `.hex` is also created in the build output directory `firmware/build`
+
 * Or a `.hex` file can be created from `.bin`:
 
 ```bash
