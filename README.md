@@ -76,8 +76,7 @@ File            | Prebuilt `.hex` available [here](https://files.zubax.com/produ
 4. Power up the board.
 5. Run the flashing tool.
 
-** `.hex` is also created in the build output directory `firmware/build`
-Or a `.hex` file can be created from `.bin`:
+** `.hex` is also created in the build output directory `firmware/build` or a `.hex` file can be created from `.bin`:
 
 ```bash
 arm-none-eabi-objcopy -I binary -O ihex firmware.bin out.hex
