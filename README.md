@@ -57,7 +57,7 @@ Orange  | RXD
 Yellow  | TXD
 Black   | GND
 
-#### Flashing with NXP Flash Magic
+#### Flashing with NXP Flash Magic (simplest method)
 
 Get the flashing tool from <http://www.flashmagictool.com/>.
 Start the tool, then configure it as follows:
@@ -67,7 +67,7 @@ Parameter       | Value
 Baud rate       | 115200
 Interface       | ISP
 Oscilator       | 12 MHz
-File            | Use the Prebuild `.hex` avaialbe [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/) **
+File            | Prebuild `.hex` available [here](https://files.zubax.com/products/com.zubax.opengrab_epm_v3/) **
 
 1. Connect the USB-UART adapter.
 2. Close J3 to select serial bootloader.
@@ -75,7 +75,7 @@ File            | Use the Prebuild `.hex` avaialbe [here](https://files.zubax.co
 4. Power up the board.
 5. Run the flashing tool.
 
-** `.hex` is also created in the build output directory `firmware/build`
+* ** `.hex` is also created in the build output directory `firmware/build`
 
 * Or a `.hex` file can be created from `.bin`:
 
