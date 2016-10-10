@@ -65,6 +65,7 @@ Start the tool, then configure it as follows:
 
 Parameter       | Value
 ----------------|------------------------------------
+Select Device   | LPC11C24/301
 Baud rate       | 115200
 Interface       | ISP
 Oscilator       | 12 MHz
