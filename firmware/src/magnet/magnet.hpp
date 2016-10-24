@@ -45,9 +45,10 @@ void turnOn(unsigned num_cycles);
 /**
  * Turns the magnet off. The number of switch cycles is fixed.
  */
-void turnOff();
+void setState(unsigned blah);
 
-bool isTurnedOn();
+unsigned magnetState();
+unsigned desired_state;
 
 enum class Health : std::uint8_t
 {

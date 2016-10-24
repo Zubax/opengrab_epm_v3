@@ -163,7 +163,14 @@ static Health health = Health::Ok;
 
 static std::uint8_t charger_status_flags = 0;
 
-static bool magnet_is_on = false;               ///< This is default
+/**
+ * Magnet state
+ * 0 = off
+ * 1 = z_positive
+ * 2 = z_negative
+ */
+
+static unsigned magnet_state = 0;               ///< This is default
 
 static board::MonotonicTime last_command_ts;
 
@@ -176,57 +183,7 @@ void updateChargerStatusFlags(std::uint8_t x)
     charger_status_flags = x;
 }
 
-void pollOn()
-{
-    if (!chrg.isConstructed())
-    {
-        chrg.construct<unsigned>(475);
-    }
-
-    const auto status = chrg->runAndGetStatus();
-    updateChargerStatusFlags(chrg->getErrorFlags());
-
-    if (status == charger::Charger::Status::InProgress)
-    {
-        duty_cycle_counter--;
-    }
-    else if (status == charger::Charger::Status::Done)
-    {
-        board::setMagnetPos();          // The cap is charged, switching the magnet
-        magnet_is_on = true;
-
-        // Print some info when capacitor fails to discharge and delcare error
-
-        board::delayMSec(2);                   // Wait until ADC cap settles
-        const unsigned Vout = board::getOutVoltageInVolts();
-
-        if (Vout > 100)
-        {
-            board::syslog("\r\nCapacitor failed to discharge \r\n");
-            board::syslog("Thyristor D20 on CTRL2 or D23 on CTRL3 failed to fire. Or open magnet winding \r\n");
-            board::syslog("Vin  = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
-            board::syslog("Vout = ", Vout, " V\r\n");
-
-            chrg.destroy();
-            remaining_cycles = 0;
-            health = Health::Error;
-        }
-        else
-        {
-            chrg.destroy();                 // Then updating the state
-            remaining_cycles--;
-            health = Health::Ok;
-        }
-    }
-    else                                    // Charge timed out
-    {
-        chrg.destroy();
-        remaining_cycles = 0;
-        health = Health::Error;
-    }
-}
-
-void pollOff()
+void pollSetState()
 {
     const unsigned cycle_index = TurnOffCycleArraySize - unsigned(-remaining_cycles);
 
@@ -234,7 +191,13 @@ void pollOff()
 
     if (!chrg.isConstructed())
     {
-        chrg.construct<unsigned>(cycle_array_item[0]);
+        if (desired_state == 0)
+        {
+            chrg.construct<unsigned>(cycle_array_item[0]);
+        }else{
+            chrg.construct<unsigned>(475);
+        }
+
     }
 
     const auto status = chrg->runAndGetStatus();
@@ -246,15 +209,36 @@ void pollOff()
     }
     else if (status == charger::Charger::Status::Done)
     {
-        if (cycle_array_item[1])        // The cap is charged, switching the magnet
+        if (desired_state == 0)
+        {
+            if (cycle_array_item[1])        // The cap is charged, switching the magnet
+            {
+                board::setMagnetPos();
+            }
+            else
+            {
+                board::setMagnetNeg();
+            }
+            remaining_cycles++;
+        }
+        if (desired_state == 1)
         {
             board::setMagnetPos();
+            magnet_state = 1;
+            remaining_cycles = 0;
+            chrg.destroy();
+            health = Health::Ok;
         }
-        else
+        if (desired_state == 2)
         {
             board::setMagnetNeg();
+            magnet_state = 2;
+            remaining_cycles = 0;
+            chrg.destroy();
+            health = Health::Ok;
         }
-        magnet_is_on = false;
+
+
 
         // Print some info when capacitor fails to discharge and delcare error
         board::delayMSec(2);                   // Wait until ADC cap settles
@@ -268,12 +252,8 @@ void pollOff()
 
             health = Health::Error;
             remaining_cycles = 0;
-            chrg.destroy();
         }
 
-        chrg.destroy();
-        remaining_cycles++;
-        health = Health::Ok;
     }
     else                    // Charger timed out
     {
@@ -285,8 +265,14 @@ void pollOff()
 
 } // namespace
 
-void turnOn(unsigned num_cycles)
+void setState(unsigned blah)
 {
+    desired_state = blah;
+    if (magnet_state == desired_state)
+    {
+        // Do nothing
+        return;
+    }
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         // Print some usefull info
@@ -300,39 +286,25 @@ void turnOn(unsigned num_cycles)
             return;         // Rate limiting
         }
 
-        num_cycles = std::max<unsigned>(MinTurnOnCycles, num_cycles);
-        num_cycles = std::min<unsigned>(MaxCycles, num_cycles);
-        remaining_cycles = int(num_cycles);
-    }
-}
-
-void turnOff()
-{
-    if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
-    {
-        // Print some usefull inf
-        board::syslog("\r\n Off command received \r\n");
-        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
-
-        // Check rate limiting
-        if (duty_cycle_counter < 0)
+        /**
+         * Magnet state
+         * 0 = off
+         * 1 = z_positive
+         * 2 = z_negative
+         */
+        if (desired_state == 0 )
         {
-            board::syslog("\r\nRate limiting\r\n\r\n");
-            return;         // Rate limiting
-        }
-
-        remaining_cycles = -int(TurnOffCycleArraySize);
-
-        if (!magnet_is_on)
+            remaining_cycles = -int(TurnOffCycleArraySize);
+        } else
         {
-            remaining_cycles += build_config::cycles_to_skip;
+            remaining_cycles = 1;
         }
     }
 }
 
-bool isTurnedOn()
+unsigned magnetState()
 {
-    return magnet_is_on;
+    return magnet_state;
 }
 
 void poll()
@@ -351,17 +323,9 @@ void poll()
         }
     }
 
-    if (remaining_cycles > 0)
+    if (remaining_cycles != 0)
     {
-        pollOn();
-    }
-    else if (remaining_cycles < 0)
-    {
-        pollOff();
-    }
-    else
-    {
-        ;
+        pollSetState();
     }
 }
 

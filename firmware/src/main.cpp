@@ -123,16 +123,28 @@ void callPollAndResetWatchdog()
      * PWM control update
      */
     const auto pwm = board::getPwmInput();
-    if (pwm != board::PwmInput::NoSignal &&
-        pwm != board::PwmInput::Neutral)
+    if (pwm != board::PwmInput::NoSignal)
     {
         if (pwm == board::PwmInput::High)
         {
-            magnet::turnOn(magnet::MinTurnOnCycles);
+            if (magnet::magnetState() != 2)
+            {
+                magnet::setState(2);
+            }
+        }
+        if (pwm == board::PwmInput::Neutral)
+        {
+            if (magnet::magnetState() != 0)
+            {
+                magnet::setState(0);
+            }
         }
         if (pwm == board::PwmInput::Low)
         {
-            magnet::turnOff();
+            if (magnet::magnetState() != 3)
+            {
+                magnet::setState(3);
+            }
         }
     }
 
@@ -141,13 +153,13 @@ void callPollAndResetWatchdog()
      */
     if (board::hadButtonPressEvent())
     {
-        if (magnet::isTurnedOn())
+        if (magnet::magnetState() == 1)
         {
-            magnet::turnOff();
+            magnet::setState(2);
         }
         else
         {
-            magnet::turnOn(magnet::MinTurnOnCycles);
+            magnet::setState(1);
         }
     }
 
@@ -278,15 +290,15 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
      */
     static unsigned last_command = std::numeric_limits<unsigned>::max();
 
-    if ((bool(msg.command) != magnet::isTurnedOn()) || (msg.command != last_command))
+    if ((bool(msg.command) != magnet::magnetState()) || (msg.command != last_command))
     {
         if (msg.command == 0)
         {
-            magnet::turnOff();
+            magnet::setState(1);
         }
         else
         {
-            magnet::turnOn(msg.command);
+            magnet::setState(2);
         }
     }
 
@@ -314,7 +326,7 @@ void publishHardpointStatus()
     msg.payload_weight = std::numeric_limits<float>::quiet_NaN();
     msg.payload_weight_variance = std::numeric_limits<float>::infinity();
 
-    msg.status = magnet::isTurnedOn() ? 1 : 0;
+    msg.status = (unsigned short)magnet::magnetState();
 
     (void)pub.broadcast(msg);
 }
