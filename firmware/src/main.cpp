@@ -127,23 +127,23 @@ void callPollAndResetWatchdog()
     {
         if (pwm == board::PwmInput::High)
         {
-            if (magnet::magnetState() != 2)
+            if (magnet::getMagnetState() != magnet::State::z_positive)
             {
-                magnet::setState(2);
+                magnet::setState(magnet::State::z_positive);
             }
         }
         if (pwm == board::PwmInput::Neutral)
         {
-            if (magnet::magnetState() != 0)
+            if (magnet::getMagnetState() != magnet::State::off)
             {
-                magnet::setState(0);
+                magnet::setState(magnet::State::off);
             }
         }
         if (pwm == board::PwmInput::Low)
         {
-            if (magnet::magnetState() != 3)
+            if (magnet::getMagnetState() != magnet::State::z_negative)
             {
-                magnet::setState(3);
+                magnet::setState(magnet::State::z_negative);
             }
         }
     }
@@ -153,13 +153,13 @@ void callPollAndResetWatchdog()
      */
     if (board::hadButtonPressEvent())
     {
-        if (magnet::magnetState() == 1)
+        if (magnet::getMagnetState() == magnet::State::z_negative)
         {
-            magnet::setState(2);
+            magnet::setState(magnet::State::z_positive);
         }
         else
         {
-            magnet::setState(1);
+            magnet::setState(magnet::State::z_negative);
         }
     }
 
@@ -290,18 +290,19 @@ void handleHardpointCommand(const uavcan::equipment::hardpoint::Command& msg)
      */
     static unsigned last_command = std::numeric_limits<unsigned>::max();
 
-    if ((bool(msg.command) != magnet::magnetState()) || (msg.command != last_command))
+ /*   if ((bool(msg.command) != magnet::getMagnetState()) || (msg.command != last_command))
     {
         if (msg.command == 0)
         {
-            magnet::setState(1);
+            magnet::setState(magnet::State::z_positive);
         }
         else
         {
-            magnet::setState(2);
+            magnet::setState(magnet::State::z_negative);
         }
     }
-
+*/
+    last_command ++;
     // Oi moroz moroz ne moroz' mena
     last_command = msg.command; // Ne moroz' mena moigo kona
 }
@@ -326,7 +327,7 @@ void publishHardpointStatus()
     msg.payload_weight = std::numeric_limits<float>::quiet_NaN();
     msg.payload_weight_variance = std::numeric_limits<float>::infinity();
 
-    msg.status = (unsigned short)magnet::magnetState();
+    msg.status = (unsigned short)magnet::getMagnetState();
 
     (void)pub.broadcast(msg);
 }

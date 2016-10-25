@@ -39,110 +39,34 @@ namespace
 
 static constexpr std::uint16_t TurnOffCycleArray[][2] =
 {
-    #if defined(PRODROPPER)
-
-    { 475, 0 },
-    { 200, 0 },
-    { 300, 1 },
-    { 290, 0 },
-    { 280, 1 },
-    { 270, 0 },
-    { 260, 1 },
-    { 250, 0 },
-    { 240, 1 },
-    { 230, 0 },
-    { 220, 1 },
-    { 210, 0 },
-    { 200, 1 },
-    { 190, 0 },
-    { 180, 1 },
-    { 170, 0 },
-    { 160, 1 },
-    { 150, 0 },
-    { 140, 1 },
-    { 130, 0 },
-    { 120, 1 },
-    { 110, 0 },
-    { 100, 1 },
-    { 90,  0 },
-    { 80,  1 },
-    { 70,  0 },
-    { 60,  1 },
-    { 50,  0 },
-    { 40,  1 },
-    { 30,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 },
-    { 20,  0 },
-    { 20,  1 }
-
-    #else
-
-    { 475, 0 },
-    { 475, 0 },
     { 475, 0 },
     { 427, 1 },
-    { 427, 1 },
-    { 427, 1 },
-    { 384, 0 },
-    { 384, 0 },
     { 384, 0 },
     { 346, 1 },
-    { 346, 1 },
-    { 346, 1 },
-    { 311, 0 },
-    { 311, 0 },
     { 311, 0 },
     { 280, 1 },
-    { 280, 1 },
-    { 280, 1 },
-    { 252, 0 },
-    { 252, 0 },
     { 252, 0 },
     { 227, 1 },
-    { 227, 1 },
-    { 227, 1 },
-    { 204, 0 },
-    { 204, 0 },
     { 204, 0 },
     { 184, 1 },
-    { 184, 1 },
-    { 184, 1 },
-    { 165, 0 },
-    { 165, 0 },
     { 165, 0 },
     { 149, 1 },
-    { 149, 1 },
-    { 149, 1 },
-    { 134, 0 },
-    { 134, 0 },
     { 134, 0 },
     { 120, 1 },
-    { 120, 1 },
-    { 120, 1 },
-    { 108, 0 },
-    { 108, 0 },
     { 108, 0 },
     { 97,  1 },
-    { 97,  1 },
-    { 97,  1 },
-    { 88,  0 },
-    { 88,  0 },
     { 88,  0 },
     { 79,  1 },
-    { 79,  1 },
-    { 79,  1 }
+    { 71,  0 },
+    { 64,  1 },
+    { 58,  0 },
+    { 52,  1 },
+    { 47,  0 },
+    { 42,  1 },
+    { 38,  0 },
+    { 34,  1 },
+    { 31,  0 }
 
-    #endif
 };
 
 static constexpr unsigned TurnOffCycleArraySize = sizeof(TurnOffCycleArray) / sizeof(TurnOffCycleArray[0]);
@@ -163,14 +87,8 @@ static Health health = Health::Ok;
 
 static std::uint8_t charger_status_flags = 0;
 
-/**
- * Magnet state
- * 0 = off
- * 1 = z_positive
- * 2 = z_negative
- */
-
-static unsigned magnet_state = 0;               ///< This is default
+State magnet_state = State::off;
+State desired_state;
 
 static board::MonotonicTime last_command_ts;
 
@@ -191,8 +109,11 @@ void pollSetState()
 
     if (!chrg.isConstructed())
     {
-        if (desired_state == 0)
+
+
+        if (desired_state == magnet::State::off)
         {
+
             chrg.construct<unsigned>(cycle_array_item[0]);
         }else{
             chrg.construct<unsigned>(475);
@@ -209,7 +130,7 @@ void pollSetState()
     }
     else if (status == charger::Charger::Status::Done)
     {
-        if (desired_state == 0)
+        if (desired_state == magnet::State::off)
         {
             if (cycle_array_item[1])        // The cap is charged, switching the magnet
             {
@@ -219,21 +140,23 @@ void pollSetState()
             {
                 board::setMagnetNeg();
             }
-            remaining_cycles++;
+            remaining_cycles ++;
+            chrg.destroy();
+            magnet_state = State::off;
         }
-        if (desired_state == 1)
+        if (desired_state == magnet::State::z_positive)
         {
             board::setMagnetPos();
-            magnet_state = 1;
-            remaining_cycles = 0;
+            magnet_state = State::z_positive;
+            remaining_cycles --;
             chrg.destroy();
             health = Health::Ok;
         }
-        if (desired_state == 2)
+        if (desired_state == magnet::State::z_negative)
         {
             board::setMagnetNeg();
-            magnet_state = 2;
-            remaining_cycles = 0;
+            magnet_state = State::z_negative;
+            remaining_cycles --;
             chrg.destroy();
             health = Health::Ok;
         }
@@ -265,7 +188,7 @@ void pollSetState()
 
 } // namespace
 
-void setState(unsigned blah)
+void setState(State blah)
 {
     desired_state = blah;
     if (magnet_state == desired_state)
@@ -276,8 +199,22 @@ void setState(unsigned blah)
     if (remaining_cycles == 0)          // Ignore the command if switching is already in progress
     {
         // Print some usefull info
-        board::syslog("\r\n On command received \r\n");
-        board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
+        board::syslog("\r\n");
+        board::syslog("Command recived\r\n");
+        switch(desired_state)
+        {
+            case State::off         : board::syslog("desired_state: off \r\n");    break;
+            case State::z_positive  : board::syslog("desired_state: z_positive \r\n");  break;
+            case State::z_negative  : board::syslog("desired_state: z_negative \r\n");  break;
+        }
+        switch(magnet_state)
+        {
+            case State::off         : board::syslog("magnet_state: off \r\n");     break;
+            case State::z_positive  : board::syslog("magnet_state: z_positive \r\n");   break;
+            case State::z_negative  : board::syslog("magnet_state: z_negative \r\n");   break;
+        }
+        board::syslog("\r\n");
+      //  board::syslog(" Vin         = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
 
         // Check rate limiting
         if (duty_cycle_counter< 0)
@@ -292,17 +229,17 @@ void setState(unsigned blah)
          * 1 = z_positive
          * 2 = z_negative
          */
-        if (desired_state == 0 )
+        if (desired_state == magnet::State::off )
         {
             remaining_cycles = -int(TurnOffCycleArraySize);
         } else
         {
-            remaining_cycles = 1;
+            remaining_cycles = 2;
         }
     }
 }
 
-unsigned magnetState()
+State getMagnetState()
 {
     return magnet_state;
 }
