@@ -1,6 +1,8 @@
 OpenGrab EPM v3
 ===============
 
+[![Join the chat at https://gitter.im/Zubax/general](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/Zubax/general)
+
 OpenGrab EPM v3 is an electropermanent magnet, combining the advantages of electro and permanent magnets.
 It has been developed by [NicaDrone](http://nicadrone.com) in collaboration with [Zubax Robotics](http://zubax.com).
 
