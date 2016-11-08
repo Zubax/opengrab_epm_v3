@@ -197,7 +197,7 @@ void pollOn()
 
         // Print some info when capacitor fails to discharge and delcare error
 
-        board::delayMSec(2);                   // Wait until ADC cap settles
+        board::delayMSec(4);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
 
         if (Vout > 100)
@@ -257,7 +257,7 @@ void pollOff()
         magnet_is_on = false;
 
         // Print some info when capacitor fails to discharge and delcare error
-        board::delayMSec(2);                   // Wait until ADC cap settles
+        board::delayMSec(4);                   // Wait until ADC cap settles
         const unsigned Vout = board::getOutVoltageInVolts();
         if (Vout > 100)                        // 1ms is not really enough hence 100V
         {
