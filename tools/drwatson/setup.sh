@@ -7,6 +7,6 @@ fi
 
 set -o xtrace
 
-apt-get install -y python3 python3-pip can-utils
+apt-get install -y python3 python3-pip can-utils python3-yaml
 
 pip3 install colorama 'uavcan>=0.0.dev0' eventlet
