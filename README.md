@@ -40,7 +40,7 @@ The build outputs will be available in the directory `build/`.
 * HV section to avoid touching during debug, see fig. 1.
 * Solder Jumper settings see fig. 1 and 2.
 
-#### V3 Rev 4B and earlyer
+#### V3 Rev 4B and earlier
 ![Figure 1](annotation.jpg "Figure 1")
 
 #### V3 Rev 5C
