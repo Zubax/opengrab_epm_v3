@@ -68,10 +68,6 @@ constexpr unsigned PumpSwitchPinMask = (1U << 0) | (1U << 1) | (1U << 2) | (1U <
 
 constexpr unsigned MagnetCtrlPortNum = 2;
 
-// these two lines need to be removed later
-constexpr unsigned MagnetCtrlPinMask23 = (1U << 1) | (1U << 7);
-constexpr unsigned MagnetCtrlPinMask14 = (1U << 2) | (1U << 8);
-
 constexpr unsigned MagnetCtrlPinLeftLow    = 1U << 2;   // PIO2_2
 constexpr unsigned MagnetCtrlPinRightHeigh = 1U << 8;   // PIO2_8
 
@@ -253,7 +249,7 @@ void initGpio()
     gpio::makeOutputsAndSet(CanLedPortNum, CanLedPinMask, 0);
 
     gpio::makeOutputsAndSet(PumpSwitchPortNum, PumpSwitchPinMask, 0);
-    // TODO pin mask update
+   
     gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinLeftLow | MagnetCtrlPinRightHeigh | MagnetCtrlPinRightLow | MagnetCtrlPinLeftHeigh, 0);
 
     // PWM input config
