@@ -116,6 +116,8 @@ constexpr PinMuxGroup pinmux[] =
     // PIO1
     { IOCON_PIO1_10, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN },    // Vin_ADC
 
+    { IOCON_PIO1_11, IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_ADMODE_EN |IOCON_OPENDRAIN_EN }, // Mag_ADC
+
     { IOCON_PIO1_7,  IOCON_FUNC1 | IOCON_HYS_EN | IOCON_MODE_PULLUP },                          // UART_TXD
 #if BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO1_11, IOCON_FUNC0 | IOCON_HYS_EN | IOCON_DIGMODE_EN },                           // CAN LED
@@ -268,6 +270,7 @@ void initAdc()
 
     Chip_ADC_SetSampleRate(LPC_ADC, &clock, SamplesPerSecond);
     Chip_ADC_EnableChannel(LPC_ADC, ADC_CH6, ENABLE);       // Vin
+    Chip_ADC_EnableChannel(LPC_ADC, ADC_CH7, ENABLE);       // Magnetometer
     Chip_ADC_EnableChannel(LPC_ADC, ADC_CH0, ENABLE);       // Vout
     Chip_ADC_SetBurstCmd(LPC_ADC, ENABLE);
 }
@@ -297,6 +300,82 @@ void init()
     resetWatchdog();
 }
 
+static const unsigned FlashStorageSize = 256;
+static const unsigned FlashStorageAddress = 32768 - FlashStorageSize;
+static const unsigned FlashStorageSectorNumber = 7;
+
+static const unsigned FlashStorageOffsetDeviceSignature = FlashStorageSize - std::tuple_size<DeviceSignature>::value;
+static const unsigned FlashStorageOffsetMagnetometerCalibration = FlashStorageOffsetDeviceSignature - 8;
+
+void readFlashStorage(unsigned offset, unsigned length, void* output)
+{
+    std::memcpy(output,
+                reinterpret_cast<void*>(FlashStorageAddress + offset),
+                length);
+}
+
+int writeFlashStorage(unsigned offset, unsigned length, const void* data)
+{
+    // Sanity check
+    if (length == 0 || (length + offset) > FlashStorageSize)
+    {
+        return -1000;
+    }
+
+    // Reading contents from flash into a temporary RAM buffer (which must be word aligned)
+    alignas(long long) std::uint8_t buffer[FlashStorageSize];
+    std::memcpy(buffer, reinterpret_cast<void*>(FlashStorageAddress), FlashStorageSize);
+
+    // Modifying the temporary buffer accordingly
+    std::memmove(buffer + offset, data, length);
+
+    // IAP commands go here
+    unsigned iap_command[5] = {};
+    unsigned iap_result[5] = {};
+    const auto iap_entry_point = reinterpret_cast<void(*)(unsigned[5], unsigned[4])>(0x1FFF1FF1);
+
+    // Preparing the sector for write
+    iap_command[0] = 50;
+    iap_command[1] = FlashStorageSectorNumber;  // Start sector
+    iap_command[2] = FlashStorageSectorNumber;  // End sector
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
+    {
+        return -int(iap_result[0]);
+    }
+
+    // Erasing the sector
+    iap_command[0] = 52;
+    iap_command[3] = SystemCoreClock / 1000;    // System clock in kHz
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
+    {
+        return -int(iap_result[0]);
+    }
+
+    // Preparing the sector for write
+    iap_command[0] = 50;
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
+    {
+        return -int(iap_result[0]);
+    }
+
+    // Writing
+    iap_command[0] = 51;
+    iap_command[1] = FlashStorageAddress;                  // Destination
+    iap_command[2] = reinterpret_cast<unsigned>(&buffer);  // Source
+    iap_command[3] = FlashStorageSize;                     // Size
+    iap_command[4] = SystemCoreClock / 1000;               // System clock in kHz
+    iap_entry_point(iap_command, iap_result);
+    if (iap_result[0] != 0)
+    {
+        return -int(iap_result[0]);
+    }
+
+    return 0;
+}
+
 } // namespace
 
 void die()
@@ -317,11 +396,9 @@ void readUniqueID(UniqueID& out_uid)
 
 bool tryReadDeviceSignature(DeviceSignature& out_signature)
 {
-    static const unsigned SignatureAddress = 32768 - std::tuple_size<DeviceSignature>::value; // End of flash
-
-    std::memcpy(out_signature.data(),
-                reinterpret_cast<void*>(SignatureAddress),
-                std::tuple_size<DeviceSignature>::value);
+    readFlashStorage(FlashStorageOffsetDeviceSignature,
+                     std::tuple_size<DeviceSignature>::value,
+                     out_signature.data());
 
     for (auto x : out_signature)
     {
@@ -474,6 +551,50 @@ bool hadButtonPressEvent()
         press_counter = 0;
         return had_press;
     }
+}
+
+bool isButtonCurrentlyPressed()
+{
+    if (gpio::markOutputs(StatusLedPortNum, StatusLedPinMask) != 0)
+    {
+        return false;   // LED is on, ignore
+    }
+    return gpio::get(StatusLedPortNum, StatusLedPinMask) != 0;
+}
+
+unsigned calibrateMagnetometer()
+{
+    board::syslog("Calibrating\r\n");
+
+    const unsigned value = board::getMagneticFieldStrengthInMilliTeslas();
+    board::syslog("Mag = ", value, " V\r\n");
+
+    writeFlashStorage(FlashStorageOffsetMagnetometerCalibration, sizeof(value), &value);
+
+    return value;
+}
+
+unsigned getMagneticFieldStrengthInMilliTeslas()     //error under 2%
+{
+    std::uint16_t new_value = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH7, &new_value);
+
+    unsigned x =
+        static_cast<unsigned>((static_cast<unsigned>(new_value) * AdcReferenceMillivolts) >> AdcResolutionBits);
+
+    return x;
+}
+
+bool isMagnetometerPresent()
+{
+    // TODO: this largely duplicates getMagInMilliTeslas(), optimize?
+    std::uint16_t new_value = 0;
+    (void)Chip_ADC_ReadValue(LPC_ADC, ADC_CH7, &new_value);
+
+    unsigned x =
+        static_cast<unsigned>((static_cast<unsigned>(new_value) * AdcReferenceMillivolts) >> AdcResolutionBits);
+
+    return x >= 100;
 }
 
 unsigned getSupplyVoltageInMillivolts()     //error under 2%

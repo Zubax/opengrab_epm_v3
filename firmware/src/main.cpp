@@ -84,17 +84,24 @@ void callPollAndResetWatchdog()
     if (boot)
     {
         boot = !boot;
-        if(board::readDipSwitch() == 0)
+        if (board::isButtonCurrentlyPressed() && board::isMagnetometerPresent())
         {
-            board::setStatusLed(true);
-            board::setCanLed(true);
-            led_update_deadline += board::MonotonicDuration::fromMSec(500);
+            board::calibrateMagnetometer();
+        }
+        else
+        {
+            if (board::readDipSwitch() == 0)
+            {
+                board::setStatusLed(true);
+                board::setCanLed(true);
+                led_update_deadline += board::MonotonicDuration::fromMSec(500);
+            }
         }
     }
 
     if (ts >= led_update_deadline)
     {
-        if(first_time_led_update)           // Turn off CAN status
+        if (first_time_led_update)           // Turn off CAN status
         {
             board::setCanLed(false);
             first_time_led_update = !first_time_led_update;
@@ -117,6 +124,7 @@ void callPollAndResetWatchdog()
          * board::syslog("Vin = ", board::getSupplyVoltageInMillivolts(), " mV\r\n");
          * board::syslog("Vout = ", board::getOutVoltageInVolts(), " V\r\n");
          */
+        board::syslog("Mag = ", board::getMagneticFieldStrengthInMilliTeslas(), " V\r\n");
     }
 
     /*

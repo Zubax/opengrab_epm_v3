@@ -81,9 +81,17 @@ std::uint8_t readDipSwitch();
  */
 bool hadButtonPressEvent();
 
+bool isButtonCurrentlyPressed();
+
 unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();
+
+unsigned getMagneticFieldStrengthInMilliTeslas();
+
+bool isMagnetometerPresent();
+
+unsigned calibrateMagnetometer();
 
 /**
  * Status of the PWM input.
