@@ -68,12 +68,11 @@ constexpr unsigned PumpSwitchPinMask = (1U << 0) | (1U << 1) | (1U << 2) | (1U <
 
 constexpr unsigned MagnetCtrlPortNum = 2;
 
-constexpr unsigned MagnetCtrlPinLeftLow    = 1U << 2;   // PIO2_2
-constexpr unsigned MagnetCtrlPinRightHeigh = 1U << 8;   // PIO2_8
+constexpr unsigned MagnetCtrlPinLeftLow   = 1U << 2;   // PIO2_2
+constexpr unsigned MagnetCtrlPinRightHigh = 1U << 8;   // PIO2_8
 
-constexpr unsigned MagnetCtrlPinRightLow   = 1U << 1;   // PIO2_1
-constexpr unsigned MagnetCtrlPinLeftHeigh  = 1U << 7;   // PIO2_7
-
+constexpr unsigned MagnetCtrlPinRightLow  = 1U << 1;   // PIO2_1
+constexpr unsigned MagnetCtrlPinLeftHigh  = 1U << 7;   // PIO2_7
 
 constexpr unsigned DipSwitchPortNum = 3;
 constexpr unsigned DipSwitchPinMask = 0b1111;
@@ -249,8 +248,8 @@ void initGpio()
     gpio::makeOutputsAndSet(CanLedPortNum, CanLedPinMask, 0);
 
     gpio::makeOutputsAndSet(PumpSwitchPortNum, PumpSwitchPinMask, 0);
-   
-    gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinLeftLow | MagnetCtrlPinRightHeigh | MagnetCtrlPinRightLow | MagnetCtrlPinLeftHeigh, 0);
+
+    gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinLeftLow | MagnetCtrlPinRightHigh | MagnetCtrlPinRightLow | MagnetCtrlPinLeftHigh, 0);
 
     // PWM input config
     // IBE must be configured in the IRQ handler because of the hardware bug (long story TODO document later)
@@ -433,9 +432,9 @@ void setMagnetPos()
 {
     gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftLow, MagnetCtrlPinLeftLow);
     board::delayUSec(50);
-    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightHeigh, MagnetCtrlPinRightHeigh);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightHigh, MagnetCtrlPinRightHigh);
     board::delayUSec(20);
-    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightHeigh, 0);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightHigh, 0);
     gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftLow, 0);
 }
 
@@ -443,10 +442,10 @@ void setMagnetNeg()
 {
     gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightLow, MagnetCtrlPinRightLow);
     board::delayUSec(50);
-    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftHeigh, MagnetCtrlPinLeftHeigh);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftHigh, MagnetCtrlPinLeftHigh);
     board::delayUSec(20);
     gpio::set(MagnetCtrlPortNum, MagnetCtrlPinRightLow, 0);
-    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftHeigh, 0);
+    gpio::set(MagnetCtrlPortNum, MagnetCtrlPinLeftHigh, 0);
 }
 
 std::uint8_t readDipSwitch()
