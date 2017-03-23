@@ -63,6 +63,9 @@ constexpr unsigned CanLedPinMask = 1U << 6;
 constexpr unsigned StatusLedPortNum = 2;
 constexpr unsigned StatusLedPinMask = 1U << 0;
 
+constexpr unsigned ExternalButtonPortNum = 1;
+constexpr unsigned ExternalButtonPinMask = 1U << 6;
+
 constexpr unsigned PumpSwitchPortNum = 1;
 constexpr unsigned PumpSwitchPinMask = (1U << 0) | (1U << 1) | (1U << 2) | (1U << 4);
 
@@ -128,6 +131,7 @@ constexpr PinMuxGroup pinmux[] =
 
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // Status LED
+    { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // External Button
 #if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
@@ -250,6 +254,8 @@ void initGpio()
     gpio::makeOutputsAndSet(PumpSwitchPortNum, PumpSwitchPinMask, 0);
 
     gpio::makeOutputsAndSet(MagnetCtrlPortNum, MagnetCtrlPinLeftLow | MagnetCtrlPinRightHigh | MagnetCtrlPinRightLow | MagnetCtrlPinLeftHigh, 0);
+
+    gpio::makeInputs(ExternalButtonPortNum, ExternalButtonPinMask);
 
     // PWM input config
     // IBE must be configured in the IRQ handler because of the hardware bug (long story TODO document later)
@@ -476,6 +482,23 @@ bool hadButtonPressEvent()
     }
 }
 
+bool hadExternalButtonPressEvent()
+{
+    constexpr std::uint8_t PressCounterThreshold = 200;
+    static std::uint8_t press_counter = 0;
+
+    if (gpio::get(ExternalButtonPortNum, ExternalButtonPinMask) != 0)
+    {
+        press_counter = std::min(static_cast<std::uint8_t>(press_counter + 1), PressCounterThreshold);
+        return false;
+    }
+    else
+    {
+        const bool had_press = press_counter >= PressCounterThreshold;
+        press_counter = 0;
+        return had_press;
+    }
+}
 unsigned getSupplyVoltageInMillivolts()     //error under 2%
 {
     static std::uint16_t old_value = 0;

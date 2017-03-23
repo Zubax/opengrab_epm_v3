@@ -81,6 +81,8 @@ std::uint8_t readDipSwitch();
  */
 bool hadButtonPressEvent();
 
+bool hadExternalButtonPressEvent();
+
 unsigned getSupplyVoltageInMillivolts();
 
 unsigned getOutVoltageInVolts();

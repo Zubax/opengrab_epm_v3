@@ -139,7 +139,7 @@ void callPollAndResetWatchdog()
     /*
      * Button update
      */
-    if (board::hadButtonPressEvent())
+    if (board::hadButtonPressEvent() || board::hadExternalButtonPressEvent() )
     {
         if (magnet::isTurnedOn())
         {
