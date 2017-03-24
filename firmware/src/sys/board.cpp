@@ -128,10 +128,10 @@ constexpr PinMuxGroup pinmux[] =
     { IOCON_PIO1_1,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW1
     { IOCON_PIO1_2,  IOCON_FUNC1 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW2
     { IOCON_PIO1_4,  IOCON_FUNC0 | IOCON_MODE_PULLDOWN | IOCON_HYS_EN | IOCON_DIGMODE_EN },     // PUMP SW4
+    { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // External Button
 
     // PIO2
     { IOCON_PIO2_0,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // Status LED
-    { IOCON_PIO1_6,  IOCON_FUNC0 | IOCON_HYS_EN | IOCON_MODE_PULLDOWN },                        // External Button
 #if !BOARD_OLIMEX_LPC_P11C24
     { IOCON_PIO2_6,  IOCON_FUNC0 },                                                             // CAN LED
 #endif
