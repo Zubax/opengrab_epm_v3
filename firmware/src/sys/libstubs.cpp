@@ -52,6 +52,16 @@ void operator delete[](void*)
     std::abort();
 }
 
+void operator delete(void*, unsigned)
+{
+    std::abort();
+}
+
+void operator delete[](void*, unsigned)
+{
+    std::abort();
+}
+
 namespace __gnu_cxx
 {
 
