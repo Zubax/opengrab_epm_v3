@@ -8,9 +8,9 @@ It has been developed by [NicaDrone](http://nicadrone.com) in collaboration with
 
 Useful links:
 
-* [**PRODUCT DOCUMENTATION**](http://docs.zubax.com/opengrab_epm_v3)
+* [**PRODUCT DOCUMENTATION**](https://kb.zubax.com/x/eoAh)
 * [HARDWARE SOURCES](https://tools.upverter.com/eda/#designId=1dada3422c772add)
-* [SUPPORT FORUM](http://productforums.zubax.com)
+* [SUPPORT FORUM](http://forum.zubax.com)
 
 ## Building the firmware
 
@@ -87,7 +87,7 @@ arm-none-eabi-objcopy -I binary -O ihex firmware.bin out.hex
 
 ### Via DroneCode Probe
 
-[DroneCode Probe](https://docs.zubax.com/dronecode_probe) is a generic JTAG / SWD + UART console adapter
+[DroneCode Probe](https://kb.zubax.com/x/iIAh) is a generic JTAG / SWD + UART console adapter
 compatible with most ARM Cortex based designs and in particular with hardware maintained by the
 [DroneCode project](http://dronecode.org).
 
