@@ -356,7 +356,7 @@ __attribute__((noinline))
 #endif
 void init()
 {
-    board::syslog("Boot\r\n");
+    board::syslog("NEW VERSION EPM FAST\r\n");
     board::syslog("FW built at ");
     board::syslog(__DATE__);
     board::syslog("\r\n");
