@@ -140,8 +140,8 @@ static constexpr std::uint16_t TurnOffCycleArray[][2] =
     { 88,  0 },
     { 79,  1 },
     { 79,  1 },
-   */{ 79,  1 }
-
+    { 79,  1 }
+ */
     #endif
 };
 
