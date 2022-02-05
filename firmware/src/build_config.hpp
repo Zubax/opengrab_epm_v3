@@ -39,9 +39,9 @@ static constexpr int      cycles_to_skip                = 3;
 
 static constexpr unsigned ChargerTimeout_ms             = 1000;
 static constexpr unsigned CommandRateLimit_ms           = 1500;
-static constexpr unsigned VinMin_mV                     = 4300;
-static constexpr unsigned VinMax_mV                     = 6700;
-static constexpr unsigned PRInductance_pH               = 10500000;
+static constexpr unsigned VinMin_mV                     = 4800;
+static constexpr unsigned VinMax_mV                     = 14400;
+static constexpr unsigned PRInductance_pH               = 12300000;
 static constexpr unsigned ReducedCurrentVoltage_mV      = 4800;
 static constexpr int      cycles_to_skip                = 5;
 
